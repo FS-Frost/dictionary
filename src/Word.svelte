@@ -1,7 +1,12 @@
 <script lang="ts">
-    import type { Word } from "./DictionaryClient";
+    import { LANG_EN, Word } from "./DictionaryClient";
 
+    export let language: string;
     export let word: Word;
+
+    $: isLangEnglish = language == LANG_EN;
+    $: originText = isLangEnglish ? "Origin" : "Origen";
+    $: partOfSpeechPrefix = isLangEnglish ? "As" : "Como";
 </script>
 
 <div class="card mb-3">
@@ -13,12 +18,12 @@
         </h5>
 
         {#if word.origin != null}
-            <h6>Origin</h6>
+            <h6>{originText}</h6>
             <p class="text-muted">{word.origin}</p>
         {/if}
 
         {#each word.meanings as meaning}
-            <h6>As {meaning.partOfSpeech}</h6>
+            <h6>{partOfSpeechPrefix} {meaning.partOfSpeech}</h6>
             {#each meaning.definitions as definition}
                 <p class="card-text"><i>{definition.definition}</i></p>
             {/each}

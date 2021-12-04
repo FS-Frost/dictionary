@@ -5,9 +5,18 @@
     let response: ClientResponse;
     let isLoading: boolean = false;
     let word: string = "";
-    let language: string = LANG_EN;
+    export let language: string = LANG_EN;
 
     $: wordIsValid = !word.includes(" ");
+    $: isLangEnglish = language == LANG_EN;
+    $: searchButton = isLangEnglish ? "Search" : "Buscar";
+    $: searchPlaceholder = isLangEnglish ? "Type the word you want to search..." : "Escribe la palabra que deseas buscar...";
+    $: selectLang = isLangEnglish ? "Languaje" : "Lenguaje";
+    $: selectOptionEn = isLangEnglish ? "English" : "Inglés";
+    $: selectOptionEs = isLangEnglish ? "Spanish" : "Español";
+    $: noResultsFor = isLangEnglish ? "No results for" : "Sin resultados para";
+    $: errorMessage = isLangEnglish ? "Ups, I hit an error. Try again." : "Vaya, me tropecé con una piedra. Intenta de nuevo.";
+    $: searchingMessage = isLangEnglish ? "Searching..." : "Buscando...";
 
     async function searchWord() {
         if (word == "") {
@@ -35,40 +44,34 @@
 
 <div class="dictionary">
     <div class="input-group mb-3">
-        <input
-            type="text"
-            class="form-control"
-            placeholder="Type the word you want to search..."
-            bind:value={word}
-            on:keyup={checkForSearchEnter}
-        />
-        <button class="btn btn-outline-secondary" type="button" on:click={searchWord} disabled={!wordIsValid}>Search</button>
+        <input type="text" class="form-control" placeholder={searchPlaceholder} bind:value={word} on:keyup={checkForSearchEnter} />
+        <button class="btn btn-outline-secondary" type="button" on:click={searchWord} disabled={!wordIsValid}>{searchButton}</button>
     </div>
 
     <div class="input-group mb-3">
-        <label class="input-group-text" for="language">Language</label>
+        <label class="input-group-text" for="language">{selectLang}</label>
         <select class="form-select" name="language" bind:value={language} on:change={searchWord}>
-            <option value={LANG_EN}>English</option>
-            <option value={LANG_ES}>Spanish</option>
+            <option value={LANG_EN}>{selectOptionEn}</option>
+            <option value={LANG_ES}>{selectOptionEs}</option>
         </select>
     </div>
 
     {#if !isLoading && response?.json?.length > 0}
         {#each response.json as defWord}
-            <Word word={defWord} />
+            <Word {language} word={defWord} />
         {/each}
     {/if}
 
     {#if !isLoading && response?.status == 404}
-        <p class="text-center">No results for "{response.word}".</p>
+        <p class="text-center">{noResultsFor} "{response.word}".</p>
     {/if}
 
     {#if !isLoading && response?.status == 500}
-        <p class="text-center">Ups, an error on the way. Try again later.</p>
+        <p class="text-center">{errorMessage}</p>
     {/if}
 
     {#if isLoading}
-        <p class="text-center">Searching...</p>
+        <p class="text-center">{searchingMessage}</p>
     {/if}
 </div>
 

@@ -1,17 +1,24 @@
 <script lang="ts">
     import Dictionary from "./Dictionary.svelte";
+    import { LANG_EN } from "./DictionaryClient";
 
     const URL_INFO = "https://dictionaryapi.dev/";
+    let language: string;
+    $: isLangEnglish = language == LANG_EN;
+    $: title = isLangEnglish ? "Dictionary" : "Diccionario";
+    $: poweredByText = isLangEnglish ? "Powered by" : "Con el poder de";
 </script>
 
 <main>
-    <h1 class="title">Dictionary</h1>
+    <h1 class="title">{title}</h1>
 
-    <Dictionary />
+    <Dictionary bind:language />
 
     <div class="footer fixed-bottom">
         <div class="container">
-            <p class="text-muted text-center">Powered by <a href={URL_INFO} target="_blank" rel="noreferrer">Free Dictionary API</a>.</p>
+            <p class="text-muted text-center">
+                {poweredByText} <a href={URL_INFO} target="_blank" rel="noreferrer">Free Dictionary API</a>.
+            </p>
         </div>
     </div>
 </main>
