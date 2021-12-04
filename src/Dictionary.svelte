@@ -44,10 +44,18 @@
         <button class="btn btn-outline-secondary" type="button" on:click={searchWord} disabled={!wordIsValid}>Search</button>
     </div>
 
-    {#if response != null && !isLoading}
+    {#if !isLoading && response?.json?.length > 0}
         {#each response.json as defWord}
             <Word word={defWord} />
         {/each}
+    {/if}
+
+    {#if !isLoading && response?.status == 404}
+        <p class="text-center">No results for "{response.word}".</p>
+    {/if}
+
+    {#if !isLoading && response?.status == 500}
+        <p class="text-center">Ups, an error on the way. Try again later.</p>
     {/if}
 
     {#if isLoading}
