@@ -23,7 +23,9 @@
         {/if}
 
         {#each word.meanings as meaning}
-            <h6>{partOfSpeechPrefix} {meaning.partOfSpeech}</h6>
+            {#if meaning.partOfSpeech != null}
+                <h6>{partOfSpeechPrefix} {meaning.partOfSpeech}</h6>
+            {/if}
             {#each meaning.definitions as definition}
                 <p class="card-text"><i>{definition.definition}</i></p>
             {/each}

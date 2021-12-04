@@ -5,7 +5,11 @@
     let response: ClientResponse;
     let isLoading: boolean = false;
     let word: string = "";
-    export let language: string = LANG_EN;
+
+    const url = new URL(window.location.href);
+    const searchParams = new URLSearchParams(url.search);
+    const urlLang = searchParams.get("lang");
+    export let language: string = urlLang ?? LANG_ES;
 
     $: wordIsValid = !word.includes(" ");
     $: isLangEnglish = language == LANG_EN;

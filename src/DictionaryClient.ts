@@ -43,7 +43,7 @@ export interface Phonetic {
 }
 
 export interface Meaning {
-    partOfSpeech: string;
+    partOfSpeech: string | undefined;
     definitions: Definition[];
 }
 
