@@ -14,7 +14,7 @@
 
     <Dictionary bind:language />
 
-    <div class="footer fixed-bottom">
+    <div class="footer">
         <div class="container">
             <p class="text-muted text-center">
                 {poweredByText} <a href={URL_INFO} target="_blank" rel="noreferrer">Free Dictionary API</a>.
