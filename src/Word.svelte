@@ -4,7 +4,7 @@
     export let word: Word;
 </script>
 
-<div class="word card">
+<div class="card mb-3">
     <div class="card-body">
         <h5 class="card-title">
             {word.word}{#if word.phonetic != null}

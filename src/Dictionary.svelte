@@ -1,10 +1,11 @@
 <script lang="ts">
-    import { ClientResponse, getDefinition } from "./DictionaryClient";
+    import { ClientResponse, getDefinition, LANG_EN, LANG_ES } from "./DictionaryClient";
     import Word from "./Word.svelte";
 
     let response: ClientResponse;
     let isLoading: boolean = false;
     let word: string = "";
+    let language: string = LANG_EN;
 
     $: wordIsValid = !word.includes(" ");
 
@@ -14,7 +15,7 @@
         }
 
         isLoading = true;
-        response = await getDefinition(word);
+        response = await getDefinition(word, language);
         console.log(response);
         isLoading = false;
     }
@@ -42,6 +43,14 @@
             on:keyup={checkForSearchEnter}
         />
         <button class="btn btn-outline-secondary" type="button" on:click={searchWord} disabled={!wordIsValid}>Search</button>
+    </div>
+
+    <div class="input-group mb-3">
+        <label class="input-group-text" for="language">Language</label>
+        <select class="form-select" name="language" bind:value={language} on:change={searchWord}>
+            <option value={LANG_EN}>English</option>
+            <option value={LANG_ES}>Spanish</option>
+        </select>
     </div>
 
     {#if !isLoading && response?.json?.length > 0}

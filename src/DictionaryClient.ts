@@ -1,7 +1,11 @@
-const API_URL = "https://api.dictionaryapi.dev/api/v2/entries/en/";
+const API_URL = "https://api.dictionaryapi.dev/api/v2/entries";
 
-export async function getDefinition(word: string): Promise<ClientResponse> {
-    const apiResponse = await fetch(API_URL + word);
+export const LANG_EN = "en";
+export const LANG_ES = "es";
+
+export async function getDefinition(word: string, language: string): Promise<ClientResponse> {
+    const url = `${API_URL}/${language}/${word}`;
+    const apiResponse = await fetch(url);
     const body = await apiResponse.text();
 
     let clientResponse: ClientResponse = {
