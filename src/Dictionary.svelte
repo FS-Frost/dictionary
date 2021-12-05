@@ -40,6 +40,8 @@
     });
 
     async function searchWord() {
+        updateUrl();
+
         if (word == "") {
             return;
         }
@@ -47,7 +49,6 @@
         isLoading = true;
         response = await getDefinition(word, language);
         console.log(response);
-        updateUrl();
         isLoading = false;
     }
 
