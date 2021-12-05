@@ -13,7 +13,7 @@
     $: wordIsValid = !word.includes(" ");
     $: isLangEnglish = language == LANG_EN;
     $: searchButton = isLangEnglish ? "Search" : "Buscar";
-    $: searchPlaceholder = isLangEnglish ? "Type the word you want to search..." : "Escribe la palabra que deseas buscar...";
+    $: searchPlaceholder = isLangEnglish ? "Type a word..." : "Escribe una palabra...";
     $: selectLang = isLangEnglish ? "Languaje" : "Lenguaje";
     $: selectOptionEn = isLangEnglish ? "English" : "Inglés";
     $: selectOptionEs = isLangEnglish ? "Spanish" : "Español";
