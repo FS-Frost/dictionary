@@ -27,7 +27,7 @@
         const urlLang = searchParams.get("lang");
         const validLangs = [LANG_ES, LANG_EN];
 
-        if (validLangs.includes(urlLang)) {
+        if (urlLang && validLangs.includes(urlLang)) {
             language = urlLang;
         }
 
@@ -54,7 +54,7 @@
 
     function checkForSearchEnter(
         e: KeyboardEvent & {
-            currentTarget: EventTarget & HTMLButtonElement;
+            currentTarget: EventTarget & HTMLInputElement;
         }
     ) {
         if (e.key != "Enter") {
@@ -89,7 +89,7 @@
         </select>
     </div>
 
-    {#if !isLoading && response?.json?.length > 0}
+    {#if !isLoading && response && response.json}
         {#each response.json as defWord}
             <Word {language} word={defWord} />
         {/each}
