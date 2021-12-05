@@ -10,7 +10,7 @@
 </script>
 
 <main>
-    <h1 class="title">{title}</h1>
+    <h1 class="title"><a href="/">{title}</a></h1>
 
     <Dictionary bind:language />
 
@@ -30,9 +30,17 @@
     }
 
     .title {
-        color: #343434;
         text-transform: uppercase;
         text-align: center;
+    }
+
+    .title a {
+        color: #343434;
+        text-decoration: none;
+    }
+
+    .title a:hover {
+        color: #0a58ca;
     }
 
     @media (min-width: 640px) {
