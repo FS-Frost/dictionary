@@ -6,7 +6,21 @@
 
     $: isLangEnglish = language == LANG_EN;
     $: originText = isLangEnglish ? "Origin" : "Origen";
-    $: partOfSpeechPrefix = isLangEnglish ? "As" : "Como";
+
+    function isVocal(letter: string): boolean {
+        return ["a", "e", "i", "o", "u"].includes(letter);
+    }
+
+    function getPartOfSpeechPrefix(partOfSpeech: string): string {
+        let prefix = isLangEnglish ? "As " : "Como";
+
+        if (isLangEnglish && partOfSpeech.length > 0) {
+            const firstLetter = partOfSpeech[0];
+            prefix += isVocal(firstLetter) ? "an" : "a";
+        }
+
+        return prefix;
+    }
 </script>
 
 <div class="card mb-3">
@@ -24,7 +38,7 @@
 
         {#each word.meanings as meaning}
             {#if meaning.partOfSpeech != null}
-                <h6>{partOfSpeechPrefix} {meaning.partOfSpeech}</h6>
+                <h6><b>{getPartOfSpeechPrefix(meaning.partOfSpeech)} {meaning.partOfSpeech}</b></h6>
             {/if}
             {#each meaning.definitions as definition}
                 <p class="card-text"><i>{definition.definition}</i></p>
