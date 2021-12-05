@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { onMount } from "svelte";
+
     import { ClientResponse, getDefinition, LANG_EN, LANG_ES } from "./DictionaryClient";
     import Word from "./Word.svelte";
 
@@ -6,10 +8,7 @@
     let isLoading: boolean = false;
     let word: string = "";
 
-    const url = new URL(window.location.href);
-    const searchParams = new URLSearchParams(url.search);
-    const urlLang = searchParams.get("lang");
-    export let language: string = urlLang ?? LANG_ES;
+    export let language: string = LANG_ES;
 
     $: wordIsValid = !word.includes(" ");
     $: isLangEnglish = language == LANG_EN;
@@ -22,6 +21,24 @@
     $: errorMessage = isLangEnglish ? "Ups, I hit an error. Try again." : "Vaya, me tropecé con una piedra. Intenta de nuevo.";
     $: searchingMessage = isLangEnglish ? "Searching..." : "Buscando...";
 
+    onMount(() => {
+        const url = new URL(window.location.href);
+        const searchParams = new URLSearchParams(url.search);
+        const urlLang = searchParams.get("lang");
+        const validLangs = [LANG_ES, LANG_EN];
+
+        if (validLangs.includes(urlLang)) {
+            language = urlLang;
+        }
+
+        const urlWord = searchParams.get("word");
+
+        if (urlWord) {
+            word = urlWord;
+            searchWord();
+        }
+    });
+
     async function searchWord() {
         if (word == "") {
             return;
@@ -30,6 +47,7 @@
         isLoading = true;
         response = await getDefinition(word, language);
         console.log(response);
+        updateUrl();
         isLoading = false;
     }
 
@@ -43,6 +61,16 @@
         }
 
         searchWord();
+    }
+
+    function updateUrl() {
+        const params = new URLSearchParams({
+            lang: language,
+            word: word,
+        });
+
+        const url = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
+        window.history.pushState(null, "", url);
     }
 </script>
 
