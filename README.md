@@ -1,6 +1,8 @@
 # Dictionary
 
-Simple dictionary app for [Spanish](https://fs-frost.github.io/dictionary) (default) and [English](https://fs-frost.github.io/dictionary/?lang=en&word=house) languages.
+Simple dictionary app for Spanish and English languages.
+
+[https://fs-frost.github.io/dictionary](https://fs-frost.github.io/dictionary/?lang=en&word=house)
 
 ## Built with
 
