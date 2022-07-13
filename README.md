@@ -1,13 +1,13 @@
 # Dictionary
 
-Simple dictionary app for Spanish and English languages.
+Web dictionary for Spanish and English languages.
 
 [https://fs-frost.github.io/dictionary](https://fs-frost.github.io/dictionary/?lang=en&word=house)
 
 ## Built with
 
--   Svelte
--   TypeScript
+-   [Svelte](https://svelte.dev/)
+-   [TypeScript](https://www.typescriptlang.org/)
 -   [Free Dictionary API](https://dictionaryapi.dev)
 
 ## Run locally
