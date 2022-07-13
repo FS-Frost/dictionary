@@ -8,6 +8,7 @@ Web dictionary for Spanish and English languages.
 
 -   [Svelte](https://svelte.dev/)
 -   [TypeScript](https://www.typescriptlang.org/)
+-   [rollup.js](https://rollupjs.org/)
 -   [Free Dictionary API](https://dictionaryapi.dev)
 
 ## Run locally
