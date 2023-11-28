@@ -1,24 +1,33 @@
 <script lang="ts">
     import { onMount } from "svelte";
 
-    import { ClientResponse, getDefinition, LANG_EN, LANG_ES } from "./DictionaryClient";
+    import {
+        ClientResponse,
+        getDefinition,
+        LANG_EN,
+        LANG_ES,
+    } from "./DictionaryClient";
     import Word from "./Word.svelte";
 
     let response: ClientResponse;
     let isLoading: boolean = false;
     let word: string = "";
 
-    export let language: string = LANG_ES;
+    export let language: string = LANG_EN;
 
     $: wordIsValid = !word.includes(" ");
     $: isLangEnglish = language == LANG_EN;
     $: searchButton = isLangEnglish ? "Search" : "Buscar";
-    $: searchPlaceholder = isLangEnglish ? "Type a word..." : "Escribe una palabra...";
+    $: searchPlaceholder = isLangEnglish
+        ? "Type a word..."
+        : "Escribe una palabra...";
     $: selectLang = isLangEnglish ? "Languaje" : "Lenguaje";
     $: selectOptionEn = isLangEnglish ? "English" : "Inglés";
     $: selectOptionEs = isLangEnglish ? "Spanish" : "Español";
     $: noResultsFor = isLangEnglish ? "No results for" : "Sin resultados para";
-    $: errorMessage = isLangEnglish ? "Ups, I hit an error. Try again." : "Vaya, me tropecé con una piedra. Intenta de nuevo.";
+    $: errorMessage = isLangEnglish
+        ? "Ups, I hit an error. Try again."
+        : "Vaya, me tropecé con una piedra. Intenta de nuevo.";
     $: searchingMessage = isLangEnglish ? "Searching..." : "Buscando...";
 
     onMount(() => {
@@ -70,20 +79,38 @@
             word: word,
         });
 
-        const url = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
+        const url = `${window.location.origin}${
+            window.location.pathname
+        }?${params.toString()}`;
         window.history.pushState(null, "", url);
     }
 </script>
 
 <div class="dictionary">
     <div class="input-group mb-3">
-        <input type="text" class="form-control" placeholder={searchPlaceholder} bind:value={word} on:keyup={checkForSearchEnter} />
-        <button class="btn btn-outline-secondary" type="button" on:click={searchWord} disabled={!wordIsValid}>{searchButton}</button>
+        <input
+            type="text"
+            class="form-control"
+            placeholder={searchPlaceholder}
+            bind:value={word}
+            on:keyup={checkForSearchEnter}
+        />
+        <button
+            class="btn btn-outline-secondary"
+            type="button"
+            on:click={searchWord}
+            disabled={!wordIsValid}>{searchButton}</button
+        >
     </div>
 
     <div class="input-group mb-3">
         <label class="input-group-text" for="language">{selectLang}</label>
-        <select class="form-select" name="language" bind:value={language} on:change={searchWord}>
+        <select
+            class="form-select"
+            name="language"
+            bind:value={language}
+            on:change={searchWord}
+        >
             <option value={LANG_EN}>{selectOptionEn}</option>
             <option value={LANG_ES}>{selectOptionEs}</option>
         </select>
@@ -91,7 +118,14 @@
 
     {#if !isLoading && response && response.json}
         {#each response.json as defWord}
-            <Word {language} word={defWord} />
+            <Word
+                {language}
+                word={defWord}
+                on:search={(e) => {
+                    word = e.detail;
+                    searchWord();
+                }}
+            />
         {/each}
     {/if}
 
