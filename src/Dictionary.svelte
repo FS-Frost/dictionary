@@ -8,6 +8,7 @@
         LANG_ES,
     } from "./DictionaryClient";
     import Word from "./Word.svelte";
+    import { cleanWord } from "./strings";
 
     let response: ClientResponse;
     let isLoading: boolean = false;
@@ -29,6 +30,9 @@
         ? "Ups, I hit an error. Try again."
         : "Vaya, me tropecé con una piedra. Intenta de nuevo.";
     $: searchingMessage = isLangEnglish ? "Searching..." : "Buscando...";
+    $: proTip = isLangEnglish
+        ? "Pro tip: click a word to search it."
+        : "Pro tip: clic en una palabra para buscarla.";
 
     onMount(() => {
         const url = new URL(window.location.href);
@@ -116,6 +120,26 @@
         </select>
     </div>
 
+    <p>
+        <i>
+            {#each proTip.split(" ") as subword}
+                <span
+                    class="searchable"
+                    title={isLangEnglish
+                        ? `Click to search "${cleanWord(subword)}"`
+                        : `Clic para buscar "${cleanWord(subword)}"`}
+                    on:click={() => {
+                        word = cleanWord(subword);
+                        searchWord();
+                    }}
+                >
+                    {subword}
+                </span>
+                {" "}
+            {/each}
+        </i>
+    </p>
+
     {#if !isLoading && response && response.json}
         {#each response.json as defWord}
             <Word
@@ -149,5 +173,10 @@
 
     .text-center {
         text-align: center;
+    }
+
+    .searchable:hover {
+        text-decoration: underline;
+        cursor: pointer;
     }
 </style>

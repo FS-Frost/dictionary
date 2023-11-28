@@ -1,6 +1,7 @@
 <script lang="ts">
     import { createEventDispatcher } from "svelte";
     import { LANG_EN, Word } from "./DictionaryClient";
+    import { cleanWord } from "./strings";
 
     export let language: string;
     export let word: Word;
@@ -28,22 +29,13 @@
     function searchWord(subword: string): void {
         dispatch("search", subword);
     }
-
-    function cleanWord(subword: string): string {
-        const re = /(\w+)/;
-        const result = re.exec(subword);
-        if (!result || result.length == 0) {
-            return subword;
-        }
-
-        return result[0];
-    }
 </script>
 
 <div class="card mb-3">
     <div class="card-body">
         <h5 class="card-title">
-            {word.word}{#if word.phonetic != null}
+            <span>{word.word}</span>
+            {#if word.phonetic != null}
                 <i>({word.phonetic})</i>
             {/if}
         </h5>
@@ -56,10 +48,38 @@
         {#each word.meanings as meaning}
             {#if meaning.partOfSpeech != null}
                 <h6>
-                    <b
-                        >{getPartOfSpeechPrefix(meaning.partOfSpeech)}
-                        {meaning.partOfSpeech}</b
-                    >
+                    <b>
+                        {#each getPartOfSpeechPrefix(meaning.partOfSpeech).split(" ") as subword}
+                            <span
+                                class="searchable"
+                                title={isLangEnglish
+                                    ? `Click to search "${cleanWord(subword)}"`
+                                    : `Clic para buscar "${cleanWord(
+                                          subword
+                                      )}"`}
+                                on:click={() => searchWord(cleanWord(subword))}
+                            >
+                                {subword}
+                            </span>
+                            {" "}
+                        {/each}
+                        <span
+                            class="searchable"
+                            title={isLangEnglish
+                                ? `Click to search "${cleanWord(
+                                      meaning.partOfSpeech
+                                  )}"`
+                                : `Clic para buscar "${cleanWord(
+                                      meaning.partOfSpeech
+                                  )}"`}
+                            on:click={() =>
+                                searchWord(
+                                    cleanWord(meaning.partOfSpeech ?? "")
+                                )}
+                        >
+                            {meaning.partOfSpeech}
+                        </span>
+                    </b>
                 </h6>
             {/if}
 
@@ -68,7 +88,7 @@
                     <i>
                         {#each definition.definition.split(" ") as subword}
                             <span
-                                class="word"
+                                class="searchable"
                                 title={isLangEnglish
                                     ? `Click to search "${cleanWord(subword)}"`
                                     : `Clic para buscar "${cleanWord(
@@ -88,7 +108,7 @@
 </div>
 
 <style>
-    .word:hover {
+    .searchable:hover {
         text-decoration: underline;
         cursor: pointer;
     }
