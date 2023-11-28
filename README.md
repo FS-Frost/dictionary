@@ -2,7 +2,7 @@
 
 Web dictionary for Spanish and English languages.
 
-[https://fs-frost.github.io/dictionary](https://fs-frost.github.io/dictionary/?lang=en&word=house)
+[https://fs-frost.github.io/dictionary](https://fs-frost.github.io/dictionary)
 
 ## Built with
 
