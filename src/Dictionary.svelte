@@ -12,7 +12,7 @@
 
     let response: ClientResponse;
     let isLoading: boolean = false;
-    let word: string = "";
+    let word: string = "water";
 
     export let language: string = LANG_EN;
 
@@ -48,8 +48,9 @@
 
         if (urlWord) {
             word = urlWord;
-            searchWord();
         }
+
+        searchWord();
     });
 
     async function searchWord() {
