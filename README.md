@@ -4,6 +4,8 @@ Web dictionary for Spanish and English languages.
 
 [https://fs-frost.github.io/dictionary](https://fs-frost.github.io/dictionary)
 
+<img src="public/img/preview.png" alt="preview" />
+
 ## Built with
 
 -   [Svelte](https://svelte.dev/)
