@@ -1,6 +1,6 @@
 # Dictionary
 
-Web dictionary for Spanish and English languages.
+Web dictionary for Spanish and English languages, installable as [PWA](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps).
 
 [https://fs-frost.github.io/dictionary](https://fs-frost.github.io/dictionary)
 
@@ -16,8 +16,8 @@ Web dictionary for Spanish and English languages.
 ## Run locally
 
 ```shell
-yarn install
-yarn run dev
+bun install
+bun run dev
 ```
 
 Go to http://localhost:5000.
