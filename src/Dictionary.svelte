@@ -69,7 +69,7 @@
     function checkForSearchEnter(
         e: KeyboardEvent & {
             currentTarget: EventTarget & HTMLInputElement;
-        }
+        },
     ) {
         if (e.key != "Enter") {
             return;
@@ -133,6 +133,7 @@
                         word = cleanWord(subword);
                         searchWord();
                     }}
+                    on:keydown={() => {}}
                 >
                     {subword}
                 </span>

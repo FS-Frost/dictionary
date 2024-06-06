@@ -55,9 +55,10 @@
                                 title={isLangEnglish
                                     ? `Click to search "${cleanWord(subword)}"`
                                     : `Clic para buscar "${cleanWord(
-                                          subword
+                                          subword,
                                       )}"`}
                                 on:click={() => searchWord(cleanWord(subword))}
+                                on:keydown={() => {}}
                             >
                                 {subword}
                             </span>
@@ -67,15 +68,16 @@
                             class="searchable"
                             title={isLangEnglish
                                 ? `Click to search "${cleanWord(
-                                      meaning.partOfSpeech
+                                      meaning.partOfSpeech,
                                   )}"`
                                 : `Clic para buscar "${cleanWord(
-                                      meaning.partOfSpeech
+                                      meaning.partOfSpeech,
                                   )}"`}
                             on:click={() =>
                                 searchWord(
-                                    cleanWord(meaning.partOfSpeech ?? "")
+                                    cleanWord(meaning.partOfSpeech ?? ""),
                                 )}
+                            on:keydown={() => {}}
                         >
                             {meaning.partOfSpeech}
                         </span>
@@ -92,9 +94,10 @@
                                 title={isLangEnglish
                                     ? `Click to search "${cleanWord(subword)}"`
                                     : `Clic para buscar "${cleanWord(
-                                          subword
+                                          subword,
                                       )}"`}
                                 on:click={() => searchWord(cleanWord(subword))}
+                                on:keydown={() => {}}
                             >
                                 {subword}
                             </span>
