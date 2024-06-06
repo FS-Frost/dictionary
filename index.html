@@ -1,44 +1,61 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width,initial-scale=1" />
 
-        <title>Dictionary</title>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
 
-        <base href="/dictionary/" />
-        <link rel="icon" type="image/png" href="/favicon.png" />
-        <link rel="stylesheet" href="global.css" />
-        <link rel="stylesheet" href="build/bundle.css" />
-        <link
-            href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
-            rel="stylesheet"
-            integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
-            crossorigin="anonymous"
-        />
-        <script
-            src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
-            integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
-            crossorigin="anonymous"
-        ></script>
-        <script src="js/fork-me-baby.min.js"></script>
+    <title>Dictionary</title>
 
-        <script defer src="build/bundle.js"></script>
-    </head>
+    <base href="/dictionary/" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="stylesheet" href="global.css" />
+    <link rel="stylesheet" href="build/bundle.css" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous" />
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous"></script>
+    <script src="js/fork-me-baby.min.js"></script>
 
-    <body>
-        <script>
-            forkMeBaby({
-                position: "top-right",
-                link: "https://github.com/FS-Frost/dictionary",
-                sticky: false,
+    <script defer src="build/bundle.js"></script>
+</head>
+
+<body>
+    <script>
+        forkMeBaby({
+            position: "top-right",
+            link: "https://github.com/FS-Frost/dictionary",
+            sticky: false,
+        });
+
+        if ("serviceWorker" in navigator) {
+            window.addEventListener("load", function () {
+                navigator.serviceWorker
+                    .register("worker.js")
+                    .then(
+                        function (registration) {
+                            console.log("Worker registration successful", registration.scope);
+                        },
+                        function (err) {
+                            console.log("Worker registration failed", err);
+                        }
+                    )
+                    .catch(function (err) {
+                        console.log(err);
+                    });
             });
-        </script>
+        } else {
+            console.log("Service Worker is not supported by browser.");
+        }
+    </script>
 
-        <style>
-            .fork-me-baby.top-right:before {
-                border-right-color: #302a7a !important;
-            }
-        </style>
-    </body>
+    <style>
+        .fork-me-baby.top-right:before {
+            border-right-color: #302a7a !important;
+        }
+    </style>
+</body>
+
 </html>
