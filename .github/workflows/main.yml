@@ -31,6 +31,10 @@ jobs:
             - name: Change base-tag in index.html from / to dictionary
               run: sed -i 's/<base href="\/" \/>/<base href="\/dictionary\/" \/>/g' build/index.html
 
+            - name: Generate build info
+              run: |
+                  echo "{\"sha\": \"${{ github.sha }}\", \"ref\": \"${{ github.ref_name }}\", \"actor\": \"${{ github.actor }}\"}" > build/build-info.json
+
             - name: Generate .nojekyll
               run: |
                   echo "" > build/.nojekyll
