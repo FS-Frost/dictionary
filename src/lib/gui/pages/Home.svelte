@@ -1,13 +1,21 @@
 <script lang="ts">
-    import Dictionary from "./Dictionary.svelte";
-    import { LANG_EN } from "./DictionaryClient";
+    import Dictionary from "$lib/gui/Dictionary.svelte";
+    import { LANG_EN } from "$lib/DictionaryClient";
 
     const URL_INFO = "https://dictionaryapi.dev/";
-    let language: string;
-    $: isLangEnglish = language == LANG_EN;
-    $: title = isLangEnglish ? "Dictionary" : "Diccionario";
-    $: poweredByText = isLangEnglish ? "Powered by" : "Con el poder de";
+
+    let language = $state<string>(LANG_EN);
+    let isLangEnglish: boolean = $derived(language == LANG_EN);
+    let title: string = $derived(isLangEnglish ? "Dictionary" : "Diccionario");
+
+    let poweredByText: string = $derived(
+        isLangEnglish ? "Powered by" : "Con el poder de",
+    );
 </script>
+
+<svelte:head>
+    <title>{title}</title>
+</svelte:head>
 
 <main>
     <h1 class="title"><a href="/">{title}</a></h1>
@@ -17,7 +25,10 @@
     <div class="footer">
         <div class="container">
             <p class="text-muted text-center">
-                {poweredByText} <a href={URL_INFO} target="_blank" rel="noreferrer">Free Dictionary API</a>.
+                {poweredByText}
+                <a href={URL_INFO} target="_blank" rel="noreferrer"
+                    >Free Dictionary API</a
+                >.
             </p>
         </div>
     </div>
@@ -25,6 +36,7 @@
 
 <style>
     main {
+        width: 100%;
         padding: 1em;
         margin: 0 auto;
     }
@@ -41,16 +53,6 @@
 
     .title a:hover {
         color: #0a58ca;
-    }
-
-    @media (min-width: 640px) {
-        main {
-            max-width: none;
-        }
-
-        .title {
-            font-size: 1.6em;
-        }
     }
 
     .text-center {

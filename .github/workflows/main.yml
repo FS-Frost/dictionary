@@ -29,10 +29,14 @@ jobs:
                   bun run build
 
             - name: Change base-tag in index.html from / to dictionary
-              run: sed -i 's/<base href="\/" \/>/<base href="\/dictionary\/" \/>/g' public/index.html
+              run: sed -i 's/<base href="\/" \/>/<base href="\/dictionary\/" \/>/g' build/index.html
+
+            - name: Generate .nojekyll
+              run: |
+                  echo "" > build/.nojekyll
 
             - name: Deploy 🚀
               uses: JamesIves/github-pages-deploy-action@4.1.7
               with:
                   branch: gh-pages
-                  folder: public
+                  folder: build

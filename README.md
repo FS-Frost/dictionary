@@ -4,7 +4,7 @@ Web dictionary for Spanish and English languages, installable as [PWA](https://d
 
 [https://fs-frost.github.io/dictionary](https://fs-frost.github.io/dictionary)
 
-<img src="public/img/preview.png" alt="preview" />
+<img src="static/img/preview.png" alt="preview" />
 
 ## Built with
 

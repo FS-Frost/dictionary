@@ -1,15 +1,17 @@
 <script lang="ts">
-    import { createEventDispatcher } from "svelte";
-    import { LANG_EN, Word } from "./DictionaryClient";
-    import { cleanWord } from "./strings";
+    import { LANG_EN, type Word } from "$lib/DictionaryClient";
+    import { cleanWord } from "$lib/strings";
 
-    export let language: string;
-    export let word: Word;
+    type Props = {
+        language: string;
+        word: Word;
+        onSearch?: (text: string) => void;
+    };
 
-    const dispatch = createEventDispatcher<{ search: string }>();
+    let { language, word, onSearch }: Props = $props();
 
-    $: isLangEnglish = language == LANG_EN;
-    $: originText = isLangEnglish ? "Origin" : "Origen";
+    let isLangEnglish: boolean = $derived(language == LANG_EN);
+    let originText: string = $derived(isLangEnglish ? "Origin" : "Origen");
 
     function isVocal(letter: string): boolean {
         return ["a", "e", "i", "o", "u"].includes(letter);
@@ -27,7 +29,7 @@
     }
 
     function searchWord(subword: string): void {
-        dispatch("search", subword);
+        onSearch && onSearch(subword);
     }
 </script>
 
@@ -51,20 +53,24 @@
                     <b>
                         {#each getPartOfSpeechPrefix(meaning.partOfSpeech).split(" ") as subword}
                             <span
+                                role="button"
+                                tabindex="0"
                                 class="searchable"
                                 title={isLangEnglish
                                     ? `Click to search "${cleanWord(subword)}"`
                                     : `Clic para buscar "${cleanWord(
                                           subword,
                                       )}"`}
-                                on:click={() => searchWord(cleanWord(subword))}
-                                on:keydown={() => {}}
+                                onclick={() => searchWord(cleanWord(subword))}
+                                onkeydown={() => {}}
                             >
                                 {subword}
                             </span>
                             {" "}
                         {/each}
                         <span
+                            role="button"
+                            tabindex="0"
                             class="searchable"
                             title={isLangEnglish
                                 ? `Click to search "${cleanWord(
@@ -73,11 +79,11 @@
                                 : `Clic para buscar "${cleanWord(
                                       meaning.partOfSpeech,
                                   )}"`}
-                            on:click={() =>
+                            onclick={() =>
                                 searchWord(
                                     cleanWord(meaning.partOfSpeech ?? ""),
                                 )}
-                            on:keydown={() => {}}
+                            onkeydown={() => {}}
                         >
                             {meaning.partOfSpeech}
                         </span>
@@ -90,14 +96,16 @@
                     <i>
                         {#each definition.definition.split(" ") as subword}
                             <span
+                                role="button"
+                                tabindex="0"
                                 class="searchable"
                                 title={isLangEnglish
                                     ? `Click to search "${cleanWord(subword)}"`
                                     : `Clic para buscar "${cleanWord(
                                           subword,
                                       )}"`}
-                                on:click={() => searchWord(cleanWord(subword))}
-                                on:keydown={() => {}}
+                                onclick={() => searchWord(cleanWord(subword))}
+                                onkeydown={() => {}}
                             >
                                 {subword}
                             </span>
