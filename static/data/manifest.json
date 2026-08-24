@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "generatedAt": "2026-08-10T19:09:54.819Z",
+  "shardCount": 64,
+  "languages": {
+    "es": {
+      "words": 29905,
+      "forms": 122340,
+      "bytes": 19473017
+    },
+    "en": {
+      "words": 38965,
+      "forms": 45613,
+      "bytes": 37522298
+    }
+  },
+  "source": "kaikki.org (wiktextract) — Wiktionary",
+  "license": "CC BY-SA 4.0"
+}

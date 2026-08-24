@@ -10,16 +10,13 @@
 
 	<script src="js/fork-me-baby.min.js"></script>
 
-	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
-		integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous" />
-
-	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
-		integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
-		crossorigin="anonymous"></script>
-
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
-		integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
-		crossorigin="anonymous" referrerpolicy="no-referrer" />
+	<!--
+		Bootstrap va servido desde el propio sitio, no desde un CDN: una app que
+		presume de funcionar sin conexión no puede quedarse sin estilos en cuanto
+		se cae la red. El JS de Bootstrap no se carga porque no se usa ningún
+		componente que lo necesite, y Font Awesome se sustituyó por SVG en línea.
+	-->
+	<link href="vendor/bootstrap.min.css" rel="stylesheet" />
 
 	%sveltekit.head%
 </head>
@@ -34,13 +31,58 @@
 			sticky: false,
 		});
 
+		// Le pasa al worker los recursos que esta carga usó de verdad (bundles con
+		// nombre hasheado, CSS, iconos) para que los guarde. Sin esto la app sólo
+		// arranca offline si el caché HTTP del navegador conserva el JS, que no es
+		// algo con lo que se pueda contar.
+		function warmCache() {
+			navigator.serviceWorker.ready.then(function () {
+				function send() {
+					if (!navigator.serviceWorker.controller) return;
+
+					var urls = performance
+						.getEntriesByType("resource")
+						.map(function (entry) { return entry.name; })
+						.filter(function (url) {
+							if (url.indexOf(location.origin) !== 0) return false;
+
+							// Los shards son decenas de MB y tienen su propio caché;
+							// el manifiesto sí hace falta, porque sin él la búsqueda
+							// offline ni siquiera sabe qué idiomas hay.
+							if (url.indexOf("/data/") === -1) return true;
+
+							return url.indexOf("manifest.json") !== -1;
+						});
+
+					urls.push(location.pathname);
+
+					navigator.serviceWorker.controller.postMessage({
+						type: "warm-cache",
+						urls: urls,
+					});
+				}
+
+				if (navigator.serviceWorker.controller) {
+					send();
+					return;
+				}
+
+				// En la primera visita el worker aún no controla la página.
+				navigator.serviceWorker.addEventListener("controllerchange", send, { once: true });
+			});
+		}
+
 		if ("serviceWorker" in navigator) {
 			window.addEventListener("load", function () {
+				// Ruta relativa al <base>: en producción el sitio cuelga de
+				// /dictionary/. El worker tiene que vivir en la raíz del sitio
+				// para que su scope cubra la app entera, no sólo una subcarpeta.
 				navigator.serviceWorker
-					.register("worker.js")
+					.register("./worker.js")
 					.then(
 						function (registration) {
 							console.log("Worker registration successful", registration.scope);
+							warmCache();
 						},
 						function (err) {
 							console.log("Worker registration failed", err);

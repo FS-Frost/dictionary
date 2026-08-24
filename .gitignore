@@ -3,3 +3,12 @@
 
 .svelte-kit
 .DS_Store
+
+# Salidas de Playwright
+/test-results
+/playwright-report
+
+# Volcados de wiktextract usados para generar el dataset. Pesan cientos de MB y
+# se descargan aparte; lo que se commitea es el resultado en static/data/.
+*.jsonl
+*.jsonl.gz

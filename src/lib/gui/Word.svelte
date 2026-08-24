@@ -1,6 +1,7 @@
 <script lang="ts">
-    import { LANG_EN, type Word } from "$lib/DictionaryClient";
+    import { LANG_EN, type Word } from "$lib/dictionary";
     import { cleanWord } from "$lib/strings";
+    import Pronunciation from "$lib/gui/Pronunciation.svelte";
 
     type Props = {
         language: string;
@@ -12,6 +13,10 @@
 
     let isLangEnglish: boolean = $derived(language == LANG_EN);
     let originText: string = $derived(isLangEnglish ? "Origin" : "Origen");
+
+    let synonymsText: string = $derived(
+        isLangEnglish ? "Synonyms" : "Sinónimos",
+    );
 
     function isVocal(letter: string): boolean {
         return ["a", "e", "i", "o", "u"].includes(letter);
@@ -38,8 +43,13 @@
         <h5 class="card-title">
             <span>{word.word}</span>
             {#if word.phonetic != null}
-                <i>({word.phonetic})</i>
+                <i class="text-muted">{word.phonetic}</i>
             {/if}
+            <Pronunciation
+                word={word.word}
+                {language}
+                phonetics={word.phonetics}
+            />
         </h5>
 
         {#if word.origin != null}
@@ -113,6 +123,25 @@
                         {/each}
                     </i>
                 </p>
+
+                {#if definition.example.length > 0}
+                    <p class="example text-muted">«{definition.example}»</p>
+                {/if}
+
+                {#if definition.synonyms.length > 0}
+                    <p class="relations">
+                        <span class="text-muted">{synonymsText}:</span>
+                        {#each definition.synonyms as synonym}
+                            <button
+                                type="button"
+                                class="badge"
+                                onclick={() => searchWord(synonym)}
+                            >
+                                {synonym}
+                            </button>
+                        {/each}
+                    </p>
+                {/if}
             {/each}
         {/each}
     </div>
@@ -122,5 +151,33 @@
     .searchable:hover {
         text-decoration: underline;
         cursor: pointer;
+    }
+
+    .example {
+        border-left: 3px solid #dee2e6;
+        padding-left: 0.75rem;
+        margin-left: 0.25rem;
+        font-size: 0.9rem;
+    }
+
+    .relations {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+        align-items: center;
+        font-size: 0.85rem;
+    }
+
+    .badge {
+        border: 1px solid #ced4da;
+        border-radius: 999px;
+        background: #f8f9fa;
+        padding: 0.15rem 0.6rem;
+        font-size: 0.8rem;
+        cursor: pointer;
+    }
+
+    .badge:hover {
+        background: #e9ecef;
     }
 </style>

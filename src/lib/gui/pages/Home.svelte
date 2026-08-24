@@ -1,6 +1,6 @@
 <script lang="ts">
     import Dictionary from "$lib/gui/Dictionary.svelte";
-    import { LANG_EN } from "$lib/DictionaryClient";
+    import { LANG_EN } from "$lib/dictionary";
 
     const URL_INFO = "https://dictionaryapi.dev/";
 

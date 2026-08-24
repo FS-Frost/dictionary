@@ -2,12 +2,16 @@
     import { onMount, tick } from "svelte";
 
     import {
-        type ClientResponse,
-        getDefinition,
+        isLanguage,
         LANG_EN,
         LANG_ES,
-    } from "$lib/DictionaryClient";
+        lookup,
+        type Language,
+        type LookupResult,
+    } from "$lib/dictionary";
     import Word from "$lib/gui/Word.svelte";
+    import SourceBadge from "$lib/gui/SourceBadge.svelte";
+    import OfflineToggle from "$lib/gui/OfflineToggle.svelte";
     import { cleanWord } from "$lib/strings";
     import { pushState } from "$app/navigation";
     import { page } from "$app/state";
@@ -18,7 +22,7 @@
 
     let { language = $bindable(LANG_EN) }: Props = $props();
 
-    let response = $state<ClientResponse>();
+    let result = $state<LookupResult>();
     let isLoading = $state<boolean>(false);
     let word = $state<string>("water");
 
@@ -63,8 +67,12 @@
             return;
         }
 
+        const searchLanguage: Language = isLanguage(language)
+            ? language
+            : LANG_EN;
+
         isLoading = true;
-        response = await getDefinition(word, language);
+        result = await lookup(word, searchLanguage);
         isLoading = false;
     }
 
@@ -144,6 +152,8 @@
         </select>
     </div>
 
+    <OfflineToggle {language} />
+
     <p>
         <i>
             {#each proTip.split(" ") as subword}
@@ -167,8 +177,10 @@
         </i>
     </p>
 
-    {#if !isLoading && response && response.json}
-        {#each response.json as defWord}
+    {#if !isLoading && result?.status == "ok"}
+        <SourceBadge source={result.source} {language} />
+
+        {#each result.words as defWord}
             <Word
                 {language}
                 word={defWord}
@@ -180,11 +192,11 @@
         {/each}
     {/if}
 
-    {#if !isLoading && response?.status == 404}
-        <p class="text-center">{noResultsFor} "{response.word}".</p>
+    {#if !isLoading && result?.status == "not-found"}
+        <p class="text-center">{noResultsFor} "{result.word}".</p>
     {/if}
 
-    {#if !isLoading && response?.status == 500}
+    {#if !isLoading && result?.status == "error"}
         <p class="text-center">{errorMessage}</p>
     {/if}
 
