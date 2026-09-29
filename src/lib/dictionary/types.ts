@@ -57,7 +57,8 @@ export type LookupStatus = "ok" | "not-found" | "error";
 export type LookupResult = {
     status: LookupStatus;
     word: string;
-    language: Language;
+    /** Diccionario en el que se buscó. */
+    dictionaryId: string;
     words: Word[];
     /** Fuente que respondió. `null` si ninguna lo hizo. */
     source: SourceId | null;
@@ -74,22 +75,70 @@ export const Shard = z.object({
     entries: z.record(z.string(), z.array(Word)),
     /** forma flexionada normalizada -> palabra canónica (p. ej. "aguas" -> "agua") */
     forms: z.record(z.string(), z.string()).default({}),
+    /**
+     * clave normalizada del lema -> sus formas, tal y como se escriben.
+     *
+     * Es la tabla `forms` al revés, y hace falta aparte porque las claves de
+     * `forms` están normalizadas: servirían para buscar "cantó" pero no para
+     * *mostrarlo* (la clave es "canto", sin tilde).
+     *
+     * Opcional: los diccionarios generados antes de la v3 no la traen, y la
+     * ficha simplemente no enseña la sección.
+     */
+    inflections: z.record(z.string(), z.array(z.string())).default({}),
 });
 export type Shard = z.infer<typeof Shard>;
 
-export const LanguageStats = z.object({
+/**
+ * Versión del formato del manifiesto.
+ *
+ * Sirve para dos cosas a la vez: describe la forma del fichero y es la clave con
+ * la que el navegador invalida los shards guardados. Subirla obliga a volver a
+ * descargar, que es exactamente lo que hay que hacer cuando el dataset cambia de
+ * forma.
+ *
+ * v1: `languages`, un diccionario por idioma.
+ * v2: `dictionaries`, varios diccionarios por idioma (monolingüe y bilingües).
+ * v3: acepciones sin duplicar, tabla de flexiones por lema e `index.json`.
+ */
+export const MANIFEST_VERSION = 3;
+
+/**
+ * Un diccionario concreto del dataset.
+ *
+ * `language` y `glossLanguage` son distintos a propósito: un diccionario
+ * francés-inglés tiene las palabras en francés y las definiciones en inglés, y
+ * la interfaz necesita saberlo para nombrarlo bien y para no prometer
+ * definiciones en un idioma que no da.
+ */
+export const DictionaryInfo = z.object({
+    /** Idioma de las palabras (código ISO). */
+    language: z.string(),
+    /** Idioma en el que están escritas las definiciones. */
+    glossLanguage: z.string(),
+    /** Nombre en su propio idioma ("Français"), para el selector. */
+    name: z.string(),
     words: z.number(),
     forms: z.number(),
     bytes: z.number(),
 });
-export type LanguageStats = z.infer<typeof LanguageStats>;
+export type DictionaryInfo = z.infer<typeof DictionaryInfo>;
 
 export const Manifest = z.object({
     version: z.number(),
     generatedAt: z.string(),
     shardCount: z.number(),
-    languages: z.record(z.string(), LanguageStats),
+    /** Clave = identificador del diccionario = carpeta bajo `static/data/`. */
+    dictionaries: z.record(z.string(), DictionaryInfo),
     source: z.string(),
     license: z.string(),
 });
 export type Manifest = z.infer<typeof Manifest>;
+
+/** Un diccionario con su identificador, que en el manifiesto es la clave. */
+export type Dictionary = DictionaryInfo & { id: string };
+
+/** Si el diccionario define en el mismo idioma de las palabras. */
+export function isMonolingual(dictionary: DictionaryInfo): boolean {
+    return dictionary.language === dictionary.glossLanguage;
+}

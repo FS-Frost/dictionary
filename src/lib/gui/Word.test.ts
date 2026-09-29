@@ -102,4 +102,39 @@ describe("Word", () => {
         expect(screen.getByText("Origin")).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Listen pronunciation" })).toBeInTheDocument();
     });
+    /*
+     * Regresión: los sinónimos usaban la clase `.badge` de Bootstrap, que fija
+     * `color: #fff`. Sobre el fondo claro del chip el texto quedaba invisible.
+     * El chip es un control propio, así que no debe llevar esa clase.
+     */
+    it("no pinta los sinónimos con la clase .badge de Bootstrap", () => {
+        render(Word, { language: "es", word: makeWord() });
+
+        const synonym = screen.getByRole("button", { name: "líquido" });
+
+        expect(synonym).not.toHaveClass("badge");
+        expect(synonym).toHaveClass("chip");
+    });
+
+    it("muestra los antónimos y los hace buscables", async () => {
+        const onSearch = vi.fn();
+        const user = userEvent.setup();
+
+        const word = makeWord();
+        word.meanings[0].definitions[0].antonyms = ["sequedad"];
+
+        render(Word, { language: "es", word, onSearch });
+
+        expect(screen.getByText("Antónimos:")).toBeInTheDocument();
+
+        await user.click(screen.getByRole("button", { name: "sequedad" }));
+
+        expect(onSearch).toHaveBeenCalledWith("sequedad");
+    });
+
+    it("omite el bloque de antónimos cuando no los hay", () => {
+        render(Word, { language: "es", word: makeWord() });
+
+        expect(screen.queryByText("Antónimos:")).not.toBeInTheDocument();
+    });
 });

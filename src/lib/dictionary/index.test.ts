@@ -9,6 +9,10 @@ const freeDictionaryLookup = vi.fn();
 
 vi.mock("./offline/dataset", () => ({
     lookupOffline: (...args: unknown[]) => lookupOffline(...args),
+    // `index.ts` también importa estas para buscar en otros diccionarios; aquí
+    // sólo se prueba la cadena de fuentes, así que devuelven vacío.
+    listDictionaries: async () => [],
+    loadWordIndex: async () => null,
 }));
 
 vi.mock("./sources/raeApi", () => ({

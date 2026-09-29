@@ -52,3 +52,17 @@ export function shardIdForKey(key: string): number {
 export function shardIdForWord(word: string): number {
     return shardIdForKey(normalizeKey(word));
 }
+
+/**
+ * Si dos grafías son la misma palabra.
+ *
+ * Ignora mayúsculas pero **no** acentos ni diéresis, y esa asimetría es el
+ * fondo del asunto: "water" y "Water" son la misma palabra escrita de dos
+ * formas, mientras que "cuidara" y "cuidará" son palabras distintas. Como
+ * `normalizeKey` quita los acentos para poder buscar sin ellos, las dos caen en
+ * la misma clave, y compararlas con ella hacía que buscar "cuidará" definiera
+ * también "cuidara" y marcase las dos en el índice.
+ */
+export function isSameWord(a: string, b: string): boolean {
+    return a.toLocaleLowerCase() === b.toLocaleLowerCase();
+}

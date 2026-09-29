@@ -2,14 +2,25 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { normalizeKey, shardIdForKey, SHARD_COUNT } from "../key";
 import type { Manifest, Shard, Word } from "../types";
-import { isLanguageDownloaded, lookupOffline, prefetchLanguage, resetDatasetCache } from "./dataset";
+import {
+    deleteLanguage,
+    getLanguageStatus,
+    isLanguageDownloaded,
+    loadInflections,
+    loadWordIndex,
+    lookupOffline,
+    prefetchLanguage,
+    resetDatasetCache,
+} from "./dataset";
 import { clearShards, resetConnection } from "./store";
 
 const MANIFEST: Manifest = {
-    version: 1,
+    version: 2,
     generatedAt: "2026-01-01T00:00:00.000Z",
     shardCount: SHARD_COUNT,
-    languages: { es: { words: 2, forms: 1, bytes: 0 } },
+    dictionaries: {
+        es: { language: "es", glossLanguage: "es", name: "Español", words: 2, forms: 1, bytes: 0 },
+    },
     source: "test",
     license: "CC BY-SA 4.0",
 };
@@ -29,8 +40,20 @@ function makeWord(word: string, definition: string): Word {
  * Construye los shards igual que lo hace el generador, para que los tests
  * ejerciten el mismo reparto que produce `scripts/build-dataset.ts`.
  */
-function buildShards(words: Word[], forms: Record<string, string> = {}): Shard[] {
-    const shards: Shard[] = Array.from({ length: SHARD_COUNT }, () => ({ entries: {}, forms: {} }));
+function buildShards(
+    words: Word[],
+    forms: Record<string, string> = {},
+    inflections: Record<string, string[]> = {},
+): Shard[] {
+    const shards: Shard[] = Array.from({ length: SHARD_COUNT }, () => ({
+        entries: {},
+        forms: {},
+        inflections: {},
+    }));
+
+    for (const [key, list] of Object.entries(inflections)) {
+        shards[shardIdForKey(key)].inflections[key] = list;
+    }
 
     for (const word of words) {
         const key = normalizeKey(word.word);
@@ -48,6 +71,8 @@ function buildShards(words: Word[], forms: Record<string, string> = {}): Shard[]
 }
 
 type Fixture = {
+    /** Contenido de `index.json`; ausente = 404. */
+    index?: string[];
     manifest?: Manifest | null;
     shards: Shard[];
 };
@@ -69,6 +94,11 @@ function installFetch(fixture: Fixture): void {
                 }
 
                 return Response.json(fixture.manifest ?? MANIFEST);
+            }
+
+            if (url.endsWith("index.json")) {
+                if (!fixture.index) return new Response("nope", { status: 404 });
+                return Response.json(fixture.index);
             }
 
             const match = url.match(/\/(\d+)\.json$/);
@@ -271,9 +301,11 @@ describe("prefetchLanguage", () => {
         installFetch({ shards: buildShards([makeWord("agua", "Sustancia transparente")]) });
 
         const progress: number[] = [];
-        const ok = await prefetchLanguage("es", (done) => progress.push(done));
+        const status = await prefetchLanguage("es", {
+            onProgress: (done) => progress.push(done),
+        });
 
-        expect(ok).toBe(true);
+        expect(status).toBe("complete");
         expect(progress.at(-1)).toBe(SHARD_COUNT);
 
         const shardRequests = fetchCalls.filter((url) => !url.endsWith("manifest.json"));
@@ -306,7 +338,7 @@ describe("prefetchLanguage", () => {
             }),
         );
 
-        expect(await prefetchLanguage("es")).toBe(false);
+        expect(await prefetchLanguage("es")).toBe("failed");
         expect(await isLanguageDownloaded("es")).toBe(false);
     });
 
@@ -316,5 +348,225 @@ describe("prefetchLanguage", () => {
         await prefetchLanguage("es");
 
         expect(await isLanguageDownloaded("en")).toBe(false);
+    });
+});
+
+describe("cancelación de la descarga", () => {
+    it("no marca el idioma como descargado si se aborta a mitad", async () => {
+        installFetch({ shards: buildShards([makeWord("agua", "Sustancia transparente")]) });
+
+        const controller = new AbortController();
+
+        const status = await prefetchLanguage("es", {
+            signal: controller.signal,
+            // Abortar en el primer lote: lo ya bajado se conserva, pero el idioma
+            // no puede darse por completo.
+            onProgress: () => controller.abort(),
+        });
+
+        expect(status).toBe("cancelled");
+        expect(await isLanguageDownloaded("es")).toBe(false);
+    });
+
+    it("no descarga los shards restantes tras abortar", async () => {
+        installFetch({ shards: buildShards([makeWord("agua", "Sustancia transparente")]) });
+
+        const controller = new AbortController();
+
+        await prefetchLanguage("es", {
+            signal: controller.signal,
+            onProgress: () => controller.abort(),
+        });
+
+        const shardRequests = fetchCalls.filter((url) => !url.endsWith("manifest.json"));
+        expect(shardRequests.length).toBeLessThan(SHARD_COUNT);
+    });
+});
+
+describe("deleteLanguage", () => {
+    it("deja el idioma como no descargado", async () => {
+        installFetch({ shards: buildShards([makeWord("agua", "Sustancia transparente")]) });
+
+        await prefetchLanguage("es");
+        expect(await isLanguageDownloaded("es")).toBe(true);
+
+        await deleteLanguage("es");
+
+        expect(await isLanguageDownloaded("es")).toBe(false);
+    });
+
+    it("obliga a volver a la red en la siguiente búsqueda", async () => {
+        installFetch({ shards: buildShards([makeWord("agua", "Sustancia transparente")]) });
+
+        await prefetchLanguage("es");
+        await deleteLanguage("es");
+
+        const before = fetchCalls.length;
+        await lookupOffline("agua", "es");
+
+        // Si la copia en memoria sobreviviera al borrado, esto no pediría nada y
+        // la UI diría "sin descargar" mientras el diccionario sigue respondiendo.
+        expect(fetchCalls.length).toBeGreaterThan(before);
+    });
+});
+
+describe("getLanguageStatus", () => {
+    it("informa del tamaño y de si está descargado", async () => {
+        installFetch({ shards: buildShards([makeWord("agua", "Sustancia transparente")]) });
+
+        const before = await getLanguageStatus("es");
+        expect(before?.downloaded).toBe(false);
+        expect(before?.words).toBe(MANIFEST.dictionaries.es.words);
+
+        await prefetchLanguage("es");
+
+        const after = await getLanguageStatus("es");
+        expect(after?.downloaded).toBe(true);
+    });
+
+    it("devuelve null para un idioma que el manifiesto no trae", async () => {
+        installFetch({ shards: buildShards([makeWord("agua", "Sustancia transparente")]) });
+
+        expect(await getLanguageStatus("en")).toBeNull();
+    });
+});
+
+describe("loadWordIndex", () => {
+    /*
+     * El índice es un fichero aparte, no algo que se derive de los shards: si
+     * hubiera que leerlos todos, hojear y autocompletar sólo funcionarían con el
+     * diccionario entero descargado, que es justo lo que no queremos exigir para
+     * mirar.
+     */
+    it("se baja sin necesidad de descargar el diccionario", async () => {
+        installFetch({
+            shards: buildShards([makeWord("agua", "Sustancia transparente")]),
+            index: ["agua", "ñandú", "zapato"],
+        });
+
+        expect(await loadWordIndex("es")).toEqual(["agua", "ñandú", "zapato"]);
+        expect(await isLanguageDownloaded("es")).toBe(false);
+    });
+
+    it("no lo vuelve a pedir en la segunda llamada", async () => {
+        installFetch({
+            shards: buildShards([makeWord("agua", "Sustancia transparente")]),
+            index: ["agua"],
+        });
+
+        await loadWordIndex("es");
+        resetDatasetCache();
+
+        const before = fetchCalls.filter((url) => url.endsWith("index.json")).length;
+        expect(await loadWordIndex("es")).toEqual(["agua"]);
+
+        // Queda guardado en IndexedDB: a partir de ahí también funciona sin red.
+        const after = fetchCalls.filter((url) => url.endsWith("index.json")).length;
+        expect(after).toBe(before);
+    });
+
+    it("sin red y sin copia guardada no hay índice", async () => {
+        installFetch({ shards: buildShards([makeWord("agua", "Sustancia")]) });
+
+        expect(await loadWordIndex("es")).toBeNull();
+    });
+
+    it("el índice desaparece al eliminar el diccionario", async () => {
+        installFetch({
+            shards: buildShards([makeWord("agua", "Sustancia transparente")]),
+            index: ["agua"],
+        });
+
+        await prefetchLanguage("es");
+        expect(await loadWordIndex("es")).toEqual(["agua"]);
+
+        await deleteLanguage("es");
+        vi.stubGlobal("fetch", vi.fn(async () => new Response("nope", { status: 404 })));
+
+        expect(await loadWordIndex("es")).toBeNull();
+    });
+});
+
+describe("loadInflections", () => {
+    it("devuelve las formas del lema", async () => {
+        installFetch({
+            shards: buildShards([makeWord("cantar", "Emitir sonidos melodiosos")], {}, {
+                cantar: ["canté", "cantó", "cantaban"],
+            }),
+        });
+
+        expect(await loadInflections("cantar", "es")).toEqual(["canté", "cantó", "cantaban"]);
+    });
+
+    /* Los diccionarios generados antes de la v3 no traen la tabla. */
+    it("devuelve vacío cuando el diccionario no la trae", async () => {
+        installFetch({ shards: buildShards([makeWord("agua", "Sustancia")]) });
+
+        expect(await loadInflections("agua", "es")).toEqual([]);
+    });
+});
+
+describe("acentos y diéresis", () => {
+    /*
+     * Regresión: "cuidara" y "cuidará" comparten clave normalizada (la misma que
+     * permite encontrar "corazón" escribiendo "corazon"), así que buscar una
+     * definía también la otra. Son palabras distintas.
+     */
+    it("buscar con acento no define también la palabra sin acento", async () => {
+        installFetch({
+            shards: buildShards([
+                makeWord("cuidara", "Pretérito imperfecto de subjuntivo"),
+                makeWord("cuidará", "Futuro de indicativo"),
+            ]),
+        });
+
+        const result = await lookupOffline("cuidará", "es");
+
+        expect(result.map((entry) => entry.word)).toEqual(["cuidará"]);
+    });
+
+    it("y al revés", async () => {
+        installFetch({
+            shards: buildShards([
+                makeWord("cuidara", "Pretérito imperfecto de subjuntivo"),
+                makeWord("cuidará", "Futuro de indicativo"),
+            ]),
+        });
+
+        const result = await lookupOffline("cuidara", "es");
+
+        expect(result.map((entry) => entry.word)).toEqual(["cuidara"]);
+    });
+
+    it("lo mismo con diéresis", async () => {
+        installFetch({
+            shards: buildShards([
+                makeWord("pinguino", "Grafía sin diéresis"),
+                makeWord("pingüino", "Ave marina"),
+            ]),
+        });
+
+        expect((await lookupOffline("pingüino", "es")).map((e) => e.word)).toEqual(["pingüino"]);
+    });
+
+    /* Pero escribir sin acentos sigue encontrando la acentuada: es la promesa. */
+    it("sin acentos sigue encontrándolas todas", async () => {
+        installFetch({
+            shards: buildShards([makeWord("corazón", "Órgano que bombea la sangre")]),
+        });
+
+        expect((await lookupOffline("corazon", "es")).map((e) => e.word)).toEqual(["corazón"]);
+    });
+
+    /* Las mayúsculas sí se ignoran: es la misma palabra escrita de dos formas. */
+    it("las mayúsculas no separan palabras", async () => {
+        installFetch({
+            shards: buildShards([makeWord("Water", "Caserío"), makeWord("water", "Compuesto")]),
+        });
+
+        expect((await lookupOffline("water", "es")).map((e) => e.word)).toEqual([
+            "water",
+            "Water",
+        ]);
     });
 });

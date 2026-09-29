@@ -1,31 +1,29 @@
+/*
+ * Estilos globales.
+ *
+ * Bootstrap 5.3 ya define la paleta y la conmuta con `data-bs-theme`, así que
+ * aquí no se fija ningún color a mano: todo sale de las variables `--bs-*`. Lo
+ * que había antes (`body { color: black; background-color: white }` y un
+ * `label { color: white }` heredado de la plantilla de SvelteKit) dejaba el
+ * tema oscuro ilegible y pintaba las etiquetas en blanco sobre fondo gris
+ * también en claro.
+ */
+
 :root {
 	--font-body: Arial, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
 		Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 	--font-mono: 'Fira Mono', monospace;
-	--color-bg-0: rgb(255, 255, 255);
-	--color-bg-1: hsl(0, 0%, 100%);
-	--color-bg-2: hsl(0, 0%, 100%);
-	--color-theme-1: #0033ff;
-	--color-theme-2: #4075a6;
-	--color-text: rgba(0, 0, 0, 0.7);
 	--column-width: 42rem;
 	--column-margin-top: 4rem;
 	font-family: var(--font-body);
-	color: var(--color-text);
-}
-
-label,
-.label {
-	color: white;
 }
 
 body {
 	min-height: 100vh;
 	margin: 0;
-	color: black;
-	background-attachment: fixed;
-	background-color: white;
-	background-size: 100vw 100vh;
+	/* Sin esto la transición de tema es un salto seco; con ella el cambio se lee
+	   como una acción del usuario y no como un parpadeo. */
+	transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 h1,
@@ -36,15 +34,6 @@ p {
 
 p {
 	line-height: 1.5;
-}
-
-a {
-	color: var(--color-theme-1);
-	text-decoration: none;
-}
-
-a:hover {
-	text-decoration: underline;
 }
 
 h1 {
@@ -59,12 +48,10 @@ h2 {
 pre {
 	font-size: 16px;
 	font-family: var(--font-mono);
-	background-color: rgba(255, 255, 255, 0.45);
+	background-color: var(--bs-tertiary-bg);
 	border-radius: 3px;
-	box-shadow: 2px 2px 6px rgb(255 255 255 / 25%);
 	padding: 0.5em;
 	overflow-x: auto;
-	color: var(--color-text);
 }
 
 .text-column {

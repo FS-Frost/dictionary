@@ -8,7 +8,37 @@
 
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
 
-	<script src="js/fork-me-baby.min.js"></script>
+	<meta name="theme-color" content="#ffffff" />
+
+	<!--
+		El tema se aplica ANTES de pintar y antes de que cargue el bundle: si
+		esperase a Svelte, quien tiene el sistema en oscuro vería un fogonazo
+		blanco en cada carga. Por eso está en línea y aquí arriba, y por eso
+		duplica la lógica de `src/lib/theme.svelte.ts` — la clave "theme" y los
+		valores tienen que coincidir con ese módulo.
+	-->
+	<script>
+		(function () {
+			var preference = "auto";
+
+			try {
+				preference = localStorage.getItem("theme") || "auto";
+			} catch (err) {
+				// Modo privado: se cae a "auto", que no necesita almacenamiento.
+			}
+
+			var isDark =
+				preference === "dark" ||
+				(preference !== "light" &&
+					window.matchMedia &&
+					window.matchMedia("(prefers-color-scheme: dark)").matches);
+
+			document.documentElement.setAttribute("data-bs-theme", isDark ? "dark" : "light");
+
+			var meta = document.querySelector('meta[name="theme-color"]');
+			if (meta) meta.setAttribute("content", isDark ? "#212529" : "#ffffff");
+		})();
+	</script>
 
 	<!--
 		Bootstrap va servido desde el propio sitio, no desde un CDN: una app que
@@ -25,12 +55,6 @@
 	<div style="display: contents">%sveltekit.body%</div>
 
 	<script>
-		forkMeBaby({
-			position: "top-right",
-			link: "https://github.com/FS-Frost/dictionary",
-			sticky: false,
-		});
-
 		// Le pasa al worker los recursos que esta carga usó de verdad (bundles con
 		// nombre hasheado, CSS, iconos) para que los guarde. Sin esto la app sólo
 		// arranca offline si el caché HTTP del navegador conserva el JS, que no es
@@ -97,11 +121,6 @@
 		}
 	</script>
 
-	<style>
-		.fork-me-baby.top-right:before {
-			border-right-color: #302a7a !important;
-		}
-	</style>
 </body>
 
 </html>

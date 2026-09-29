@@ -1,17 +1,55 @@
 {
-  "version": 1,
-  "generatedAt": "2026-08-10T19:09:54.819Z",
+  "version": 3,
+  "generatedAt": "2026-09-29T17:20:49.043Z",
   "shardCount": 64,
-  "languages": {
+  "dictionaries": {
     "es": {
+      "language": "es",
+      "glossLanguage": "es",
+      "name": "Español",
       "words": 29905,
       "forms": 122340,
-      "bytes": 19473017
+      "bytes": 19472651
     },
     "en": {
+      "language": "en",
+      "glossLanguage": "en",
+      "name": "English",
       "words": 38965,
       "forms": 45613,
-      "bytes": 37522298
+      "bytes": 35859362
+    },
+    "fr-en": {
+      "language": "fr",
+      "glossLanguage": "en",
+      "name": "Français",
+      "words": 28546,
+      "forms": 64208,
+      "bytes": 14014153
+    },
+    "de-en": {
+      "language": "de",
+      "glossLanguage": "en",
+      "name": "Deutsch",
+      "words": 29030,
+      "forms": 70967,
+      "bytes": 14625030
+    },
+    "it-en": {
+      "language": "it",
+      "glossLanguage": "en",
+      "name": "Italiano",
+      "words": 27233,
+      "forms": 52406,
+      "bytes": 11494386
+    },
+    "pt-en": {
+      "language": "pt",
+      "glossLanguage": "en",
+      "name": "Português",
+      "words": 25448,
+      "forms": 67308,
+      "bytes": 11759797
     }
   },
   "source": "kaikki.org (wiktextract) — Wiktionary",

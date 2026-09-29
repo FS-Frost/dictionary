@@ -23,7 +23,14 @@ import { createInterface } from "node:readline";
 import { join } from "node:path";
 
 import { normalizeKey, shardIdForKey, SHARD_COUNT } from "../src/lib/dictionary/key";
-import type { Language, Manifest, Meaning, Shard, Word } from "../src/lib/dictionary/types";
+import {
+    MANIFEST_VERSION,
+    type DictionaryInfo,
+    type Manifest,
+    type Meaning,
+    type Shard,
+    type Word,
+} from "../src/lib/dictionary/types";
 
 /** Palabras por idioma. Sube el tamaño del repo de forma casi lineal. */
 const DEFAULT_TOP_N = 30_000;
@@ -35,6 +42,9 @@ const MAX_DEFINITIONS_PER_POS = 8;
 const MAX_EXAMPLES_PER_SENSE = 1;
 
 const MAX_SYNONYMS = 8;
+
+/** Formas por lema. Los verbos españoles pasan de 50 y nadie las lee todas. */
+const MAX_INFLECTIONS = 40;
 const MAX_EXAMPLE_LENGTH = 240;
 
 /**
@@ -68,6 +78,50 @@ const POS_ORDER = [
     "character",
     "romanization",
 ];
+
+/**
+ * Funde las acepciones que repiten glosa.
+ *
+ * Wiktionary desglosa una misma definición en subacepciones que sólo se
+ * distinguen por el ejemplo. Al aplanarlas, `water` salía con 16 acepciones de
+ * las que sólo 13 eran distintas: la misma frase tres veces seguidas. Se
+ * conserva la primera y se le acumulan los ejemplos de las demás.
+ */
+function mergeDuplicateDefinitions(definitions: Meaning["definitions"]): Meaning["definitions"] {
+    const byGloss = new Map<string, Meaning["definitions"][number] & { examples: string[] }>();
+
+    for (const definition of definitions) {
+        const existing = byGloss.get(definition.definition);
+
+        if (!existing) {
+            byGloss.set(definition.definition, {
+                ...definition,
+                examples: definition.example ? [definition.example] : [],
+            });
+
+            continue;
+        }
+
+        if (definition.example && !existing.examples.includes(definition.example)) {
+            existing.examples.push(definition.example);
+        }
+
+        for (const synonym of definition.synonyms) {
+            if (!existing.synonyms.includes(synonym)) existing.synonyms.push(synonym);
+        }
+
+        for (const antonym of definition.antonyms) {
+            if (!existing.antonyms.includes(antonym)) existing.antonyms.push(antonym);
+        }
+    }
+
+    return [...byGloss.values()].map(({ examples, ...definition }) => ({
+        ...definition,
+        // Un solo ejemplo por acepción sigue siendo la regla; la fusión sólo
+        // evita perder el mejor cuando la primera subacepción no traía ninguno.
+        example: examples[0] ?? "",
+    }));
+}
 
 function countDefinitions(word: Word): number {
     return word.meanings.reduce((total, meaning) => total + meaning.definitions.length, 0);
@@ -105,8 +159,27 @@ type KaikkiEntry = {
     antonyms?: { word?: string }[];
 };
 
+/**
+ * Dos formatos de entrada, porque las fuentes buenas no coinciden en uno solo:
+ *
+ * - `kaikki`: el volcado crudo de wiktextract. Una línea por palabra Y categoría
+ *   gramatical, con acepciones, ejemplos y etimología. Es el que da los
+ *   diccionarios monolingües (es, en).
+ * - `compact`: los JSON Lines de tdulcet/compact-dictionaries, ya podados. Una
+ *   línea por palabra, con las glosas **en inglés**. De ahí salen los bilingües.
+ */
+type InputFormat = "kaikki" | "compact";
+
 type Args = {
-    lang: Language;
+    /** Identificador del diccionario; también el directorio bajo `static/data/`. */
+    id: string;
+    /** Idioma de las palabras. */
+    lang: string;
+    /** Idioma en el que están escritas las definiciones. */
+    gloss: string;
+    /** Nombre en su propio idioma ("Français"), para el selector. */
+    name: string;
+    format: InputFormat;
     input: string;
     freq: string;
     topN: number;
@@ -121,17 +194,30 @@ function parseArgs(argv: string[]): Args {
     const lang = get("--lang");
     const input = get("--input");
     const freq = get("--freq");
+    const format = (get("--format") ?? "kaikki") as InputFormat;
 
-    if (lang !== "es" && lang !== "en") {
-        throw new Error("--lang debe ser 'es' o 'en'");
+    if (!lang) {
+        throw new Error("falta --lang <código>");
+    }
+
+    if (format !== "kaikki" && format !== "compact") {
+        throw new Error("--format debe ser 'kaikki' o 'compact'");
     }
 
     if (!input || !freq) {
-        throw new Error("faltan --input <jsonl.gz> y/o --freq <lista.txt>");
+        throw new Error("faltan --input <jsonl[.gz]> y/o --freq <lista.txt>");
     }
 
+    const gloss = get("--gloss") ?? lang;
+
     return {
+        // Un diccionario monolingüe se llama como su idioma ("es"); uno bilingüe
+        // lleva los dos ("fr-en"), porque pueden convivir varios del mismo idioma.
+        id: get("--id") ?? (gloss === lang ? lang : `${lang}-${gloss}`),
         lang,
+        gloss,
+        name: get("--name") ?? lang,
+        format,
         input,
         freq,
         topN: Number(get("--top") ?? DEFAULT_TOP_N),
@@ -196,7 +282,7 @@ function pickWords(items: { word?: string }[] | undefined, limit: number): strin
  * Convierte una línea de kaikki (una palabra + una categoría gramatical) en un
  * `Meaning`. Devuelve null si no aporta ninguna glosa aprovechable.
  */
-function toMeaning(entry: KaikkiEntry, language: Language): Meaning | null {
+function toMeaning(entry: KaikkiEntry, language: string): Meaning | null {
     const definitions: Meaning["definitions"] = [];
 
     for (const sense of entry.senses ?? []) {
@@ -224,15 +310,84 @@ function toMeaning(entry: KaikkiEntry, language: Language): Meaning | null {
     // el inglés sólo trae el código ("noun"). Preferimos el título cuando existe.
     const partOfSpeech = (language === "es" ? entry.pos_title : entry.pos) ?? entry.pos ?? "";
 
-    return { partOfSpeech, definitions };
+    return { partOfSpeech, definitions: mergeDuplicateDefinitions(definitions) };
+}
+
+/**
+ * Una línea de compact-dictionaries. Las claves son de una letra para ahorrar
+ * espacio en ficheros de decenas de MB.
+ */
+type CompactEntry = {
+    /** La palabra. La clave es la cadena vacía, sí. */
+    ""?: string;
+    /** Categorías gramaticales del término. */
+    p?: string[];
+    /** Definiciones. */
+    d?: string[];
+    /** Flexiones. */
+    f?: string[];
+    s?: string[];
+    n?: string[];
+    /** Transcripción IPA. */
+    i?: string;
+    /** Fichero de audio en Commons, ruta relativa a `.../commons/`. */
+    a?: string;
+};
+
+/** Las grabaciones de Commons se referencian por ruta relativa, no por URL. */
+const COMMONS_ROOT = "https://upload.wikimedia.org/wikipedia/commons/";
+
+/**
+ * Convierte una entrada compacta en la forma que consume la UI.
+ *
+ * Aquí se pierde precisión y conviene saberlo: `p` son las categorías del
+ * término y `d` sus definiciones, pero **no van en paralelo** — una entrada
+ * puede traer dos categorías y una sola definición. Como no hay forma de
+ * atribuir cada glosa a su categoría, se emite un único `Meaning` con las
+ * categorías juntas en vez de inventarse un reparto.
+ */
+function compactToWord(entry: CompactEntry): Word | null {
+    const word = entry[""];
+    if (!word) return null;
+
+    const definitions = (entry.d ?? [])
+        .filter((definition) => definition.length > 0)
+        .slice(0, MAX_DEFINITIONS_PER_POS)
+        .map((definition) => ({
+            definition,
+            // El formato compacto no conserva ejemplos de uso.
+            example: "",
+            synonyms: (entry.s ?? []).slice(0, MAX_SYNONYMS),
+            antonyms: (entry.n ?? []).slice(0, MAX_SYNONYMS),
+        }));
+
+    if (definitions.length === 0) return null;
+
+    const ipa = entry.i ?? "";
+    const audio = entry.a ? `${COMMONS_ROOT}${entry.a}` : "";
+
+    return {
+        word,
+        phonetic: ipa || null,
+        phonetics: ipa || audio ? [{ text: ipa, audio }] : [],
+        // El formato compacto no conserva etimologías.
+        origin: null,
+        meanings: [
+            {
+                partOfSpeech: (entry.p ?? []).join(", "),
+                definitions: mergeDuplicateDefinitions(definitions),
+            },
+        ],
+        source: "offline",
+    };
 }
 
 async function build(args: Args): Promise<void> {
-    const { lang, input, freq, topN } = args;
+    const { id, lang, input, freq, topN, format } = args;
 
-    console.log(`[${lang}] cargando lista de frecuencia (top ${topN.toLocaleString()})...`);
+    console.log(`[${id}] cargando lista de frecuencia (top ${topN.toLocaleString()})...`);
     const wanted = await loadFrequencyList(freq, topN);
-    console.log(`[${lang}] ${wanted.size.toLocaleString()} claves objetivo`);
+    console.log(`[${id}] ${wanted.size.toLocaleString()} claves objetivo`);
 
     // `posCodes` corre en paralelo a `meanings` sólo para poder ordenarlas al
     // final; se descarta antes de serializar.
@@ -241,19 +396,77 @@ async function build(args: Args): Promise<void> {
     const words = new Map<string, BuildWord>();
     const forms = new Map<string, string>();
 
+    /**
+     * Lema -> sus formas tal y como se escriben.
+     *
+     * `forms` guarda la clave NORMALIZADA, que sirve para encontrar "cantó" pero
+     * no para enseñarlo (la clave es "canto", sin tilde). Para mostrarlas hay
+     * que conservar la grafía real.
+     */
+    const spellings = new Map<string, Set<string>>();
+
+    function rememberSpelling(canonical: string, form: string): void {
+        const existing = spellings.get(canonical);
+
+        if (existing) {
+            existing.add(form);
+            return;
+        }
+
+        spellings.set(canonical, new Set([form]));
+    }
+
     let lines = 0;
     let matched = 0;
 
-    const stream = createReadStream(input).pipe(createGunzip());
+    // Los volcados de kaikki vienen comprimidos; los de compact-dictionaries, no.
+    const raw = createReadStream(input);
+    const stream = input.endsWith(".gz") ? raw.pipe(createGunzip()) : raw;
     const rl = createInterface({ input: stream, crlfDelay: Infinity });
 
     for await (const line of rl) {
         lines++;
         if (lines % 250_000 === 0) {
-            console.log(`[${lang}]   ${lines.toLocaleString()} líneas, ${words.size.toLocaleString()} palabras`);
+            console.log(`[${id}]   ${lines.toLocaleString()} líneas, ${words.size.toLocaleString()} palabras`);
         }
 
         if (line.length === 0) continue;
+
+        if (format === "compact") {
+            let compact: CompactEntry;
+            try {
+                compact = JSON.parse(line);
+            } catch {
+                continue;
+            }
+
+            const compactWord = compact[""];
+            if (!compactWord) continue;
+
+            const compactKey = normalizeKey(compactWord);
+            if (compactKey.length === 0 || !wanted.has(compactKey)) continue;
+
+            const converted = compactToWord(compact);
+            if (!converted) continue;
+
+            matched++;
+
+            // Una línea por palabra: no hay que fusionar categorías como en kaikki.
+            words.set(compactWord, { ...converted, posCodes: [compact.p?.[0] ?? ""] });
+
+            for (const form of compact.f ?? []) {
+                const formKey = normalizeKey(form);
+                if (formKey.length === 0 || formKey === compactKey) continue;
+
+                rememberSpelling(compactWord, form);
+
+                if (forms.has(formKey)) continue;
+
+                forms.set(formKey, compactWord);
+            }
+
+            continue;
+        }
 
         let entry: KaikkiEntry;
         try {
@@ -309,14 +522,17 @@ async function build(args: Args): Promise<void> {
 
             const formKey = normalizeKey(form.form);
             if (formKey.length === 0 || formKey === key) continue;
+
+            rememberSpelling(word, form.form);
+
             if (forms.has(formKey)) continue;
 
             forms.set(formKey, word);
         }
     }
 
-    console.log(`[${lang}] ${lines.toLocaleString()} líneas leídas, ${matched.toLocaleString()} coincidencias`);
-    console.log(`[${lang}] ${words.size.toLocaleString()} palabras, ${forms.size.toLocaleString()} flexiones`);
+    console.log(`[${id}] ${lines.toLocaleString()} líneas leídas, ${matched.toLocaleString()} coincidencias`);
+    console.log(`[${id}] ${words.size.toLocaleString()} palabras, ${forms.size.toLocaleString()} flexiones`);
 
     // Una flexión sólo sirve si su lema quedó en el dataset y no pisa una palabra real.
     const entryKeys = new Set([...words.keys()].map(normalizeKey));
@@ -329,7 +545,7 @@ async function build(args: Args): Promise<void> {
         usableForms.set(formKey, canonical);
     }
 
-    console.log(`[${lang}] ${usableForms.size.toLocaleString()} flexiones utilizables`);
+    console.log(`[${id}] ${usableForms.size.toLocaleString()} flexiones utilizables`);
 
     // Mapas, no objetos: hay palabras reales que chocan con el prototipo de Object
     // ("constructor", "toString"), y `{}[key] ??= []` no asigna en esos casos.
@@ -376,12 +592,31 @@ async function build(args: Args): Promise<void> {
         shardForms[shardIdForKey(formKey)].set(formKey, canonical);
     }
 
+    // Las flexiones se guardan en el shard del LEMA, no en el de cada forma: se
+    // consultan al mostrar la ficha del lema, que es el shard que ya está en
+    // memoria en ese momento.
+    const shardInflections: Map<string, string[]>[] = Array.from(
+        { length: SHARD_COUNT },
+        () => new Map(),
+    );
+
+    for (const [canonical, set] of spellings) {
+        if (!words.has(canonical)) continue;
+
+        const key = normalizeKey(canonical);
+        const list = [...set].filter((form) => form !== canonical).sort();
+        if (list.length === 0) continue;
+
+        shardInflections[shardIdForKey(key)].set(key, list.slice(0, MAX_INFLECTIONS));
+    }
+
     const shards: Shard[] = Array.from({ length: SHARD_COUNT }, (_, id) => ({
         entries: Object.fromEntries(shardEntries[id]),
         forms: Object.fromEntries(shardForms[id]),
+        inflections: Object.fromEntries(shardInflections[id]),
     }));
 
-    const outputDir = join(OUTPUT_ROOT, lang);
+    const outputDir = join(OUTPUT_ROOT, id);
     await rm(outputDir, { recursive: true, force: true });
     await mkdir(outputDir, { recursive: true });
 
@@ -393,9 +628,27 @@ async function build(args: Args): Promise<void> {
         await writeFile(join(outputDir, `${id}.json`), payload, "utf8");
     }
 
-    console.log(`[${lang}] escritos ${SHARD_COUNT} shards, ${(bytes / 1024 / 1024).toFixed(1)} MB`);
+    // Índice alfabético en un fichero aparte.
+    //
+    // Es lo que permite hojear y autocompletar SIN haberse descargado el
+    // diccionario entero: unos cientos de KB frente a decenas de MB. No puede
+    // salir de un shard suelto porque las palabras se reparten por hash.
+    const collator = new Intl.Collator(args.lang, { sensitivity: "base" });
+    const index = [...words.keys()].sort((a, b) => collator.compare(a, b) || a.localeCompare(b));
 
-    await updateManifest(lang, {
+    const indexPayload = JSON.stringify(index);
+    await writeFile(join(outputDir, "index.json"), indexPayload, "utf8");
+
+    console.log(
+        `[${id}] escritos ${SHARD_COUNT} shards, ${(bytes / 1024 / 1024).toFixed(1)} MB` +
+            ` + índice de ${index.length.toLocaleString()} palabras` +
+            ` (${(Buffer.byteLength(indexPayload) / 1024).toFixed(0)} KB)`,
+    );
+
+    await updateManifest(args, {
+        language: args.lang,
+        glossLanguage: args.gloss,
+        name: args.name,
         words: words.size,
         forms: usableForms.size,
         bytes,
@@ -403,35 +656,41 @@ async function build(args: Args): Promise<void> {
 }
 
 /**
- * El manifiesto es acumulativo: cada idioma se genera por separado, así que hay
- * que releerlo y fusionar en vez de sobrescribir.
+ * El manifiesto es acumulativo: cada diccionario se genera por separado, así que
+ * hay que releerlo y fusionar en vez de sobrescribir.
+ *
+ * Versión 2: la clave pasó de `languages` a `dictionaries`, porque ya puede
+ * haber más de un diccionario para el mismo idioma (uno monolingüe y uno
+ * bilingüe). La versión también invalida la caché de shards del navegador, que
+ * es justo lo que hace falta cuando cambia la forma del dataset.
  */
-async function updateManifest(lang: Language, stats: Manifest["languages"][string]): Promise<void> {
+async function updateManifest(args: Args, info: DictionaryInfo): Promise<void> {
     const path = join(OUTPUT_ROOT, "manifest.json");
 
-    let manifest: Manifest = {
-        version: 1,
+    let dictionaries: Manifest["dictionaries"] = {};
+
+    try {
+        const existing = JSON.parse(await readFile(path, "utf8")) as Partial<Manifest>;
+        dictionaries = existing.dictionaries ?? {};
+    } catch {
+        // Primera generación: se parte de un manifiesto vacío.
+    }
+
+    dictionaries[args.id] = info;
+
+    const manifest: Manifest = {
+        version: MANIFEST_VERSION,
         generatedAt: new Date().toISOString(),
         shardCount: SHARD_COUNT,
-        languages: {},
+        dictionaries,
         source: SOURCE,
         license: LICENSE,
     };
 
-    try {
-        const existing = JSON.parse(await readFile(path, "utf8")) as Manifest;
-        manifest = { ...manifest, languages: existing.languages ?? {} };
-    } catch {
-        // Primera generación: nos quedamos con el manifiesto vacío de arriba.
-    }
-
-    manifest.languages[lang] = stats;
-    manifest.generatedAt = new Date().toISOString();
-
     await mkdir(OUTPUT_ROOT, { recursive: true });
     await writeFile(path, JSON.stringify(manifest, null, 2), "utf8");
 
-    console.log(`[${lang}] manifiesto actualizado`);
+    console.log(`[${args.id}] manifiesto actualizado`);
 }
 
 await build(parseArgs(process.argv.slice(2)));

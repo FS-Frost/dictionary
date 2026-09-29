@@ -13,28 +13,33 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
-    "dataset:es": "bun run scripts/build-dataset.ts --lang es",
-    "dataset:en": "bun run scripts/build-dataset.ts --lang en"
+    "dataset:es": "bun run scripts/build-dataset.ts --lang es --name \"Español\"",
+    "dataset:en": "bun run scripts/build-dataset.ts --lang en --name \"English\"",
+    "dataset:fr": "bun run scripts/build-dataset.ts --format compact --lang fr --gloss en --name \"Français\"",
+    "dataset:de": "bun run scripts/build-dataset.ts --format compact --lang de --gloss en --name \"Deutsch\"",
+    "dataset:it": "bun run scripts/build-dataset.ts --format compact --lang it --gloss en --name \"Italiano\"",
+    "dataset:pt": "bun run scripts/build-dataset.ts --format compact --lang pt --gloss en --name \"Português\"",
+    "screenshots": "playwright test --config scripts/screenshots.config.ts"
   },
   "devDependencies": {
-    "@playwright/test": "^1.62.1",
+    "@playwright/test": "^1.63.0",
     "@sveltejs/adapter-static": "^3.0.10",
-    "@sveltejs/kit": "^2.70.2",
-    "@sveltejs/vite-plugin-svelte": "^4.0.4",
+    "@sveltejs/kit": "^2.70.3",
+    "@sveltejs/vite-plugin-svelte": "^7.3.1",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/svelte": "^5.4.2",
-    "@testing-library/user-event": "^14.6.3",
-    "@types/node": "^26.2.0",
-    "@vitest/coverage-v8": "^4.1.10",
+    "@testing-library/user-event": "^14.6.7",
+    "@types/node": "^26.6.3",
+    "@vitest/coverage-v8": "^5.0.2",
     "fake-indexeddb": "^6.2.5",
-    "jsdom": "^30.0.1",
-    "svelte": "^5.56.8",
-    "svelte-check": "^4.7.5",
+    "jsdom": "^30.1.1",
+    "svelte": "^5.57.1",
+    "svelte-check": "^4.7.6",
     "typescript": "^5.9.3",
-    "vite": "^5.4.21",
-    "vitest": "^4.1.10"
+    "vite": "^8.3.1",
+    "vitest": "^5.0.2"
   },
   "dependencies": {
-    "zod": "^3.25.76"
+    "zod": "^4.6.5"
   }
 }

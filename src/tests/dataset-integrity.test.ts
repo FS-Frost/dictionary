@@ -27,7 +27,7 @@ async function loadShard(language: string, shardId: number): Promise<Shard> {
 }
 
 const manifest = await loadManifest();
-const languages = Object.keys(manifest.languages);
+const languages = Object.keys(manifest.dictionaries);
 
 describe("manifiesto", () => {
     it("declara al menos español e inglés", () => {
@@ -46,9 +46,56 @@ describe("manifiesto", () => {
 describe.each(languages)("dataset de %s", (language) => {
     it("tiene un fichero por shard declarado", async () => {
         const files = await readdir(join(DATA_ROOT, language));
-        const shards = files.filter((file) => file.endsWith(".json"));
+
+        // `index.json` convive con los shards y no es uno de ellos: los shards
+        // se llaman por su número.
+        const shards = files.filter((file) => /^\d+\.json$/.test(file));
 
         expect(shards).toHaveLength(manifest.shardCount);
+    });
+
+    /*
+     * El índice es lo que permite hojear y autocompletar sin haberse descargado
+     * el diccionario entero. Si faltara, esas dos funciones quedarían mudas sin
+     * ningún error visible.
+     */
+    it("trae el índice alfabético, ordenado y completo", async () => {
+        const raw = await readFile(join(DATA_ROOT, language, "index.json"), "utf8");
+        const words = JSON.parse(raw) as string[];
+
+        expect(words).toHaveLength(manifest.dictionaries[language].words);
+
+        const collator = new Intl.Collator(manifest.dictionaries[language].language, {
+            sensitivity: "base",
+        });
+
+        const sorted = [...words].sort((a, b) => collator.compare(a, b) || a.localeCompare(b));
+        expect(words).toEqual(sorted);
+    });
+
+    /*
+     * Regresión: Wiktionary desglosa una misma glosa en subacepciones que sólo
+     * cambian el ejemplo, y al aplanarlas `water` salía con la misma frase tres
+     * veces seguidas.
+     */
+    it("no repite la misma acepción dentro de una categoría", async () => {
+        for (let shardId = 0; shardId < manifest.shardCount; shardId++) {
+            const shard = await loadShard(language, shardId);
+
+            for (const entries of Object.values(shard.entries)) {
+                for (const entry of entries) {
+                    for (const meaning of entry.meanings) {
+                        const glosses = meaning.definitions.map((d) => d.definition);
+
+                        if (new Set(glosses).size !== glosses.length) {
+                            throw new Error(
+                                `${language}: "${entry.word}" repite una acepción en "${meaning.partOfSpeech}"`,
+                            );
+                        }
+                    }
+                }
+            }
+        }
     });
 
     it("coloca cada clave en el shard donde el cliente la buscará", async () => {
@@ -88,7 +135,7 @@ describe.each(languages)("dataset de %s", (language) => {
             }
         }
 
-        expect(total).toBe(manifest.languages[language].words);
+        expect(total).toBe(manifest.dictionaries[language].words);
     });
 
     it("produce entradas que validan contra el modelo que consume la UI", async () => {
