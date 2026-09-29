@@ -1,0 +1,1 @@
+import{$ as e,L as t,Q as n,m as r,x as i,y as a}from"../chunks/bn9ZjvRw.js";import"../chunks/xihTtKlq.js";var o=e({prerender:()=>!0}),s=i(`<div class="app svelte-12qhfyh"><main class="svelte-12qhfyh"><!></main></div>`);function c(e,i){var o=s(),c=t(o),l=t(c);r(l,()=>i.children),n(c),n(o),a(e,o)}export{c as component,o as universal};

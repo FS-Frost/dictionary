@@ -8,7 +8,37 @@
 
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
 
-	<script src="js/fork-me-baby.min.js"></script>
+	<meta name="theme-color" content="#ffffff" />
+
+	<!--
+		El tema se aplica ANTES de pintar y antes de que cargue el bundle: si
+		esperase a Svelte, quien tiene el sistema en oscuro vería un fogonazo
+		blanco en cada carga. Por eso está en línea y aquí arriba, y por eso
+		duplica la lógica de `src/lib/theme.svelte.ts` — la clave "theme" y los
+		valores tienen que coincidir con ese módulo.
+	-->
+	<script>
+		(function () {
+			var preference = "auto";
+
+			try {
+				preference = localStorage.getItem("theme") || "auto";
+			} catch (err) {
+				// Modo privado: se cae a "auto", que no necesita almacenamiento.
+			}
+
+			var isDark =
+				preference === "dark" ||
+				(preference !== "light" &&
+					window.matchMedia &&
+					window.matchMedia("(prefers-color-scheme: dark)").matches);
+
+			document.documentElement.setAttribute("data-bs-theme", isDark ? "dark" : "light");
+
+			var meta = document.querySelector('meta[name="theme-color"]');
+			if (meta) meta.setAttribute("content", isDark ? "#212529" : "#ffffff");
+		})();
+	</script>
 
 	<!--
 		Bootstrap va servido desde el propio sitio, no desde un CDN: una app que
@@ -18,37 +48,33 @@
 	-->
 	<link href="vendor/bootstrap.min.css" rel="stylesheet" />
 
-	<link href="./_app/immutable/entry/start.C8KuKdfM.js" rel="modulepreload">
-		<link href="./_app/immutable/chunks/0w3xoYqx.js" rel="modulepreload">
-		<link href="./_app/immutable/chunks/GuJPGo1N.js" rel="modulepreload">
-		<link href="./_app/immutable/chunks/yBsuBa3S.js" rel="modulepreload">
-		<link href="./_app/immutable/entry/app.9heJb5s3.js" rel="modulepreload">
-		<link href="./_app/immutable/chunks/D1wgfFd7.js" rel="modulepreload">
-		<link href="./_app/immutable/chunks/EGkVdClV.js" rel="modulepreload">
-		<link href="./_app/immutable/chunks/5Z_tZtcL.js" rel="modulepreload">
-		<link href="./_app/immutable/nodes/0.De-VA9aE.js" rel="modulepreload">
-		<link href="./_app/immutable/chunks/Bpua40wv.js" rel="modulepreload">
-		<link href="./_app/immutable/nodes/2.x3L3SdAr.js" rel="modulepreload">
-		<link href="./_app/immutable/chunks/DJ6bWqOo.js" rel="modulepreload">
+	<link href="./_app/immutable/entry/start.DTIF5Iwc.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/BMZ6i5V4.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/bn9ZjvRw.js" rel="modulepreload">
+		<link href="./_app/immutable/entry/app.DIiTHFqT.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/xihTtKlq.js" rel="modulepreload">
+		<link href="./_app/immutable/nodes/0.Cn4lUJ43.js" rel="modulepreload">
+		<link href="./_app/immutable/nodes/2.Cejew7PE.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/DN9CnAKe.js" rel="modulepreload">
 		<!--1m6knwx--><!----><title>Dictionary</title>
-		<link href="./_app/immutable/assets/0.DGkYbsWz.css" rel="stylesheet">
-		<link href="./_app/immutable/assets/2.Bjsu1O-B.css" rel="stylesheet">
+		<link href="./_app/immutable/assets/0.DpzmqIg0.css" rel="stylesheet">
+		<link href="./_app/immutable/assets/2.C08k5bmw.css" rel="stylesheet">
 </head>
 
 <body data-sveltekit-preload-data="hover">
-	<div style="display: contents"><!--[--><!--[0--><!--[--><div class="app svelte-12qhfyh"><main class="svelte-12qhfyh"><!--[--><!--[--><section class="svelte-1uha8ag"><!--[0--><main class="svelte-1m6knwx"><h1 class="title svelte-1m6knwx"><a href="/" class="svelte-1m6knwx">Dictionary</a></h1> <div class="dictionary svelte-l6ps2v"><div class="input-group mb-3"><input type="text" class="form-control" placeholder="Type a word..." value="water"/> <button class="btn btn-outline-secondary" type="button">Search</button></div> <div class="input-group mb-3"><label class="input-group-text" for="language">Languaje</label> <select class="form-select" name="language"><option value="en" selected="">English</option><option value="es">Spanish</option></select></div> <div class="offline svelte-p4bbg2"><!--[0--><span class="placeholder svelte-p4bbg2"></span><!--]--></div><!----> <p><i><!--[--><span role="button" tabindex="0" class="searchable svelte-l6ps2v" title="Click to search &quot;Pro&quot;">Pro</span>  <span role="button" tabindex="0" class="searchable svelte-l6ps2v" title="Click to search &quot;tip&quot;">tip:</span>  <span role="button" tabindex="0" class="searchable svelte-l6ps2v" title="Click to search &quot;click&quot;">click</span>  <span role="button" tabindex="0" class="searchable svelte-l6ps2v" title="Click to search &quot;a&quot;">a</span>  <span role="button" tabindex="0" class="searchable svelte-l6ps2v" title="Click to search &quot;word&quot;">word</span>  <span role="button" tabindex="0" class="searchable svelte-l6ps2v" title="Click to search &quot;to&quot;">to</span>  <span role="button" tabindex="0" class="searchable svelte-l6ps2v" title="Click to search &quot;search&quot;">search</span>  <span role="button" tabindex="0" class="searchable svelte-l6ps2v" title="Click to search &quot;it&quot;">it.</span>  <!--]--></i></p> <!--[-1--><!--]--> <!--[-1--><!--]--> <!--[-1--><!--]--> <!--[-1--><!--]--></div><!----> <div class="footer svelte-1m6knwx"><div class="container"><p class="text-muted text-center svelte-1m6knwx">Powered by <a href="https://dictionaryapi.dev/" target="_blank" rel="noreferrer">Free Dictionary API</a>.</p></div></div></main><!--]--><!----></section><!--]--><!--]--></main></div><!--]--><!--]--> <!--[-1--><!--]--><!--]-->
+	<div style="display: contents"><!--[--><!--[0--><!--[--><div class="app svelte-12qhfyh"><main class="svelte-12qhfyh"><!--[--><section class="svelte-1uha8ag"><!--[0--><main class="svelte-1m6knwx"><h1 class="visually-hidden">Dictionary</h1> <div class="dictionary svelte-l6ps2v"><div class="chrome svelte-l6ps2v"><div class="mb-2 select-row svelte-l6ps2v"><div class="input-group dictionary-select svelte-hini9b"><span class="input-group-text" id="dictionary-label">Dictionary</span> <!--[-1--><button type="button" class="form-control text-start current svelte-hini9b" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="dictionary-label"><span></span> <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" focusable="false"><path d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"></path></svg><!----></button><!--]--> <!--[-1--><!--]--></div><!----> <!--[-1--><!--]--><!----> <button type="button" class="btn btn-sm btn-outline-secondary theme-toggle svelte-1nq0zv4" title="Theme: System. Switch to light" aria-label="Theme: System. Switch to light"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" focusable="false"><path d="M8 15A7 7 0 1 0 8 1v14zm0 1A8 8 0 1 1 8 0a8 8 0 0 1 0 16z"></path></svg><!----></button><!----></div> <div class="input-group search-box svelte-l6ps2v"><input type="text" class="form-control" role="combobox" aria-expanded="false" aria-controls="search-suggestions" aria-autocomplete="list" placeholder="Type a word..." value=""/> <button class="btn btn-outline-secondary search-button svelte-l6ps2v" type="button">Search</button> <button class="btn btn-outline-secondary index-toggle svelte-l6ps2v" type="button" title="Index" aria-label="Index" aria-pressed="false"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" focusable="false"><path d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811V2.828zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492V2.687zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.455c.882-.4 2.303-.881 3.68-1.02 1.409-.142 2.59.087 3.223.877a.5.5 0 0 0 .78 0c.633-.79 1.814-1.019 3.222-.877 1.378.139 2.8.62 3.681 1.02A.5.5 0 0 0 16 13.5v-11a.5.5 0 0 0-.293-.455c-.952-.433-2.48-.952-3.994-1.105C10.413.809 8.985.936 8 1.783z"></path></svg><!----></button> <button class="btn btn-outline-secondary" type="button" title="Open at random" aria-label="Open at random"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" focusable="false"><path d="M0 3.5A.5.5 0 0 1 .5 3H1c2.202 0 3.827 1.24 4.874 2.418.49.552.865 1.102 1.126 1.532.26-.43.636-.98 1.126-1.532C9.173 4.24 10.798 3 13 3v1c-1.798 0-3.173 1.01-4.129 2.082A9.6 9.6 0 0 0 7.556 8a9.6 9.6 0 0 0 1.315 1.918C9.828 10.99 11.204 12 13 12v1c-2.202 0-3.827-1.24-4.874-2.418A10.6 10.6 0 0 1 7 9.05c-.26.43-.636.98-1.126 1.532C4.827 11.76 3.202 13 1 13H.5a.5.5 0 0 1 0-1H1c1.798 0 3.173-1.01 4.129-2.082A9.6 9.6 0 0 0 6.444 8a9.6 9.6 0 0 0-1.315-1.918C4.173 5.01 2.796 4 1 4H.5a.5.5 0 0 1-.5-.5z M13 5.466V1.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384l-2.36 1.966a.25.25 0 0 1-.41-.192zm0 9v-3.932a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384l-2.36 1.966a.25.25 0 0 1-.41-.192z"></path></svg><!----></button> <!--[-1--><!--]--></div></div> <!--[-1--><!--]--><!----> <div class="offline svelte-16u1t8p"><div class="summary svelte-16u1t8p"><!--[0--><span class="placeholder svelte-16u1t8p"></span><!--]--> <!--[-1--><!--]--></div> <!--[-1--><!--]--> <!--[-1--><!--]--></div><!----> <div class="panes svelte-l6ps2v"><div class="pane-index svelte-l6ps2v"><section class="index svelte-5rjga7" aria-label="Index"><!--[0--><div class="unavailable svelte-5rjga7"><p class="text-body-secondary">The word list could not be loaded</p> <p class="text-body-secondary small">It needs a connection the first time.</p> <!--[-1--><!--]--></div><!--]--></section><!----></div> <div class="pane-entry svelte-l6ps2v"><!--[-1--><!--]--> <!--[-1--><!--]--> <!--[-1--><!--]--> <!--[-1--><!--]--></div></div></div><!----> <div class="toaster svelte-13buu4j" aria-live="polite"><!--[--><!--]--></div> <div class="toaster errors svelte-13buu4j" aria-live="assertive"><!--[--><!--]--></div><!----> <footer class="footer text-body-secondary svelte-1m6knwx"><p class="tip svelte-1m6knwx">Tip: tap any word in a definition to look it up.</p> <p class="svelte-1m6knwx"><span>Data from <a href="https://www.wiktionary.org/" target="_blank" rel="noreferrer">Wiktionary</a> (CC BY-SA)</span> <span class="separator svelte-1m6knwx" aria-hidden="true">·</span> <a class="repo svelte-1m6knwx" href="https://github.com/FS-Frost/dictionary" target="_blank" rel="noreferrer"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" focusable="false"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.42 7.42 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"></path></svg><!----> Source code</a> <!--[-1--><!--]--></p></footer></main><!--]--><!----></section><!--]--><!----></main></div><!--]--><!--]--> <!--[-1--><!--]--><!--]-->
 			
 			<script>
 				{
-					__sveltekit_1st6su5 = {
+					__sveltekit_jp20lu = {
 						base: new URL(".", location).pathname.slice(0, -1)
 					};
 
 					const element = document.currentScript.parentElement;
 
 					Promise.all([
-						import("./_app/immutable/entry/start.C8KuKdfM.js"),
-						import("./_app/immutable/entry/app.9heJb5s3.js")
+						import("./_app/immutable/entry/start.DTIF5Iwc.js"),
+						import("./_app/immutable/entry/app.DIiTHFqT.js")
 					]).then(([kit, app]) => {
 						kit.start(app, element, {
 							node_ids: [0, 2],
@@ -62,12 +88,6 @@
 		</div>
 
 	<script>
-		forkMeBaby({
-			position: "top-right",
-			link: "https://github.com/FS-Frost/dictionary",
-			sticky: false,
-		});
-
 		// Le pasa al worker los recursos que esta carga usó de verdad (bundles con
 		// nombre hasheado, CSS, iconos) para que los guarde. Sin esto la app sólo
 		// arranca offline si el caché HTTP del navegador conserva el JS, que no es
@@ -134,11 +154,6 @@
 		}
 	</script>
 
-	<style>
-		.fork-me-baby.top-right:before {
-			border-right-color: #302a7a !important;
-		}
-	</style>
 </body>
 
 </html>

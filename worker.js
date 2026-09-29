@@ -14,7 +14,7 @@
  *   nuevas, y cachearlo dejaría el dataset congelado para siempre.
  */
 
-const VERSION = "v2";
+const VERSION = "v3";
 const APP_CACHE = `dictionary-app-${VERSION}`;
 const DATA_CACHE = `dictionary-data-${VERSION}`;
 
